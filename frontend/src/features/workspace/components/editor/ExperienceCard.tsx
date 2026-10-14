@@ -6,8 +6,7 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { newBullet, type Draft, type EditableBullet } from "@/features/workspace/draft";
-import { Update } from "@/features/workspace/draft";
+import { newBullet, type Draft, type EditableBullet, type Update } from "../../draft";
 import type { FactInfo, LintResult } from "@/lib/api/types";
 import { BulletRow } from "./BulletRow";
 

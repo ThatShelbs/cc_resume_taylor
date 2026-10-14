@@ -1,8 +1,8 @@
 /** The small pill shown while a background job runs and its sheet is closed. */
 import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
-import { stepStates, stepsFor } from "@/features/jobs/stages";
-import type { Tracked } from "@/features/jobs/types";
+import { stepStates, stepsFor } from "../stages";
+import type { Tracked } from "../types";
 import type { JobStream } from "@/lib/api/sse";
 
 export function FloatingIndicator({ entry, stream, onOpen }: { entry: Tracked; stream: JobStream | undefined; onOpen: () => void }) {

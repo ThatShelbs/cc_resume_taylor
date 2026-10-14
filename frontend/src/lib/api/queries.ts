@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./client";
-import type { FactsPayload, GuardrailsPayload, ImportCandidate, Project, ProjectDetail, ProfilePayload, ResumePayload, Settings, SystemInfo, TrashItem, Version } from "./types";
+import type { FactsPayload, GuardrailsPayload, Project, ProjectDetail, ProfilePayload, ResumePayload, Settings, SystemInfo, TrashItem, Version } from "./types";
 
 export const keys = {
   system: ["system"] as const,
@@ -15,7 +15,6 @@ export const keys = {
   facts: ["facts"] as const,
   guardrails: ["guardrails"] as const,
   trash: ["trash"] as const,
-  importCandidates: ["import-candidates"] as const,
 };
 
 export const useSystem = () =>
@@ -48,8 +47,6 @@ export const useFacts = () => useQuery({ queryKey: keys.facts, queryFn: () => ap
 export const useGuardrails = () =>
   useQuery({ queryKey: keys.guardrails, queryFn: () => api.get<GuardrailsPayload>("/api/guardrails") });
 export const useTrash = () => useQuery({ queryKey: keys.trash, queryFn: () => api.get<TrashItem[]>("/api/trash") });
-export const useImportCandidates = () =>
-  useQuery({ queryKey: keys.importCandidates, queryFn: () => api.get<ImportCandidate[]>("/api/import/candidates") });
 
 /** Patch project metadata with an optimistic update of the cached detail + list. */
 export function usePatchProject(id: string) {

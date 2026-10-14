@@ -99,7 +99,7 @@ export function ResumeFlow({
       qc.invalidateQueries({ queryKey: keys.system });
       qc.invalidateQueries({ queryKey: keys.facts });
       qc.invalidateQueries({ queryKey: keys.projects });
-      toast.success("Base resume saved", { description: `resume_input/${r.file}` });
+      toast.success("Base resume saved", { description: r.file });
       if (r.fact_bank_issues.length)
         toast.warning(`${r.fact_bank_issues.length} fact(s) in your fact bank name an employer that's no longer on your resume`, {
           description: "Update them under Evidence so they stay citable.",

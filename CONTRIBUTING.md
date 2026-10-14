@@ -110,7 +110,6 @@ docs/                        brand assets, README screenshots, cached resume bes
 examples/                    anonymized sample inputs (see examples/README.md)
 scripts/                     dev and maintenance scripts (see scripts/README.md)
   windows/                   Doctor, Update and Create Desktop Shortcut helpers
-workspace/                   git-ignored data for the command-line workflow: input/, output/, archive/
 Launch Resume Taylor.bat     the double-click installer and launcher for non-technical users
 ```
 
@@ -119,9 +118,10 @@ See [CLAUDE.md](CLAUDE.md) for internals.
 ## Command-line use
 
 The command-line pipeline works on its own, with `workspace/input/` as the inputs and
-`workspace/output/` / `workspace/archive/` as the outputs. (Older checkouts used
+`workspace/output/` / `workspace/archive/` as the outputs. These git-ignored folders are
+created the first time you run it, and hold personal data. (Older checkouts used
 `resume_input/`, `resume_create/` and `resume_archive/` at the repo root; move their
-contents into the matching `workspace/` folders.)
+contents into the matching `workspace/` folders and delete the old ones.)
 
 ```bash
 python -m resume_taylor.pipeline   # or the installed command: resume-taylor-generate

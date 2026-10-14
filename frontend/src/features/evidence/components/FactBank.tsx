@@ -43,7 +43,7 @@ export function FactBank() {
     onSuccess: (r) => {
       qc.setQueryData(keys.facts, r);
       qc.invalidateQueries({ queryKey: keys.system });
-      toast.success("Fact bank saved", { description: "A backup of the previous version is in resume_archive/." });
+      toast.success("Fact bank saved", { description: "The previous version was backed up." });
     },
     onError: (e) => toast.error("Couldn't save", { description: (e as Error).message }),
   });
@@ -191,7 +191,7 @@ export function FactBank() {
       <AlertDialog open={confirmDraft} onOpenChange={setConfirmDraft}>
         <AlertDialogContent
           title="Redraft the whole fact bank?"
-          description="Claude re-extracts every fact from your profile and base resume. Your current bank, including hand edits, is backed up to resume_archive/ first."
+          description="Claude re-extracts every fact from your profile and base resume. Your current bank, including hand edits, is backed up first."
           confirmLabel="Redraft"
           onConfirm={() => draft.mutate()}
         />

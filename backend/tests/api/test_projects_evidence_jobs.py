@@ -18,6 +18,15 @@ from support import JOB_TEXT
 # -- project store ---------------------------------------------------------------
 
 
+def test_project_json_with_a_retired_field_still_loads(tmp_path):
+    store = ProjectStore(tmp_path / "projects", tmp_path / "projects" / "_trash")
+    meta = store.create(job_text=JOB_TEXT)
+    path = store.dir(meta.id) / "project.json"
+    data = json.loads(path.read_text(encoding="utf-8"))
+    path.write_text(json.dumps({**data, "imported_from": "in_job_old.txt"}), encoding="utf-8")
+    assert store.get(meta.id).id == meta.id
+
+
 def test_project_store_lifecycle(tmp_path):
     store = ProjectStore(tmp_path / "projects", tmp_path / "projects" / "_trash")
     with pytest.raises(ProjectError):

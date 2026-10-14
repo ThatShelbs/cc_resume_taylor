@@ -1,4 +1,4 @@
-"""The fact bank (resume_input/fact_bank.yaml) and the never-claim list
+"""The fact bank (fact_bank.yaml in the inputs folder) and the never-claim list
 (do_not_claim.txt) as editable data. Both files stay hand-readable: saving
 keeps the fact bank's comment header and the deny list's comments."""
 

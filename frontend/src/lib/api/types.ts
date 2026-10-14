@@ -93,7 +93,6 @@ export interface Project {
   rendered_at: string | null;
   last_generate: LastRun | null;
   last_render: LastRun | null;
-  imported_from: string | null;
   has_result: boolean;
   has_pdf: boolean;
   inputs_changed: string[];
@@ -251,10 +250,4 @@ export interface TrashItem {
   name: string;
   company: string;
   deleted: string;
-}
-
-export interface ImportCandidate {
-  file: string;
-  company: string;
-  role: string;
 }

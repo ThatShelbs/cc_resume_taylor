@@ -7,7 +7,7 @@ import { Callout } from "@/components/shared/Callout";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ProfileEditor } from "@/features/profile/components/ProfileEditor";
+import { ProfileEditor } from "./components/ProfileEditor";
 import { api, withToken } from "@/lib/api/client";
 import { keys, useProfile } from "@/lib/api/queries";
 import type { Profile, ProfilePayload } from "@/lib/api/types";
@@ -91,8 +91,8 @@ export default function ProfilePage() {
       />
       {data?.exists ? (
         <p className="mt-2 text-xs text-muted-foreground">
-          Saved as <code className="rounded bg-muted px-1">resume_input/{data.file}</code>
-          {data.updated && `, updated ${relativeTime(data.updated)}`}. Every save keeps a backup in resume_archive/.
+          Saved as <code className="rounded bg-muted px-1">{data.file}</code>
+          {data.updated && `, updated ${relativeTime(data.updated)}`}. Every save keeps a backup of the previous version.
         </p>
       ) : (
         !isLoading && (

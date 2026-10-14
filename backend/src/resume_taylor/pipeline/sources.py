@@ -51,14 +51,16 @@ def find_latest(prefix: str, exts: tuple = (".docx",), directory: Path | None = 
     """Newest matching file by modification time (not name, which would pick
     an alphabetically-last posting over the one just dropped in). Looks in
     workspace/input/ unless `directory` is given."""
-    directory = directory or INPUT_DIR
+    if directory is None:
+        INPUT_DIR.mkdir(parents=True, exist_ok=True)  # created on first use; it is git-ignored
+        directory = INPUT_DIR
     candidates = [p for p in directory.glob(f"{prefix}*") if p.suffix.lower() in exts]
     matches = sorted(candidates, key=lambda p: p.stat().st_mtime)
     if not matches:
         sys.exit(
             f"No {'/'.join(exts)} file starting with '{prefix}' found in {directory}. "
             f"Expected a profile and prior resume (in_profile*.docx, in_resume*.docx) and a "
-            f"job posting (in_job*: {', '.join(JOB_POSTING_EXTS)})."
+            f"job posting (in_job*: {', '.join(JOB_POSTING_EXTS)}). Put your files in {directory}."
         )
     return matches[-1]
 

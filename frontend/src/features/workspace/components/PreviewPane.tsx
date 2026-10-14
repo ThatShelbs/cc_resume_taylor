@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Callout } from "@/components/shared/Callout";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip } from "@/components/ui/tooltip";
-import type { Draft } from "@/features/workspace/draft";
+import type { Draft } from "../draft";
 import type { ProjectDetail } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { PdfPreview } from "./PdfPreview";

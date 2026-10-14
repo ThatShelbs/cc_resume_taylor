@@ -5,8 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ResumeDropzone } from "@/features/resume/components/ResumeDropzone";
-import { ResumeFlow } from "@/features/resume/components/ResumeFlow";
+import { ResumeDropzone } from "./components/ResumeDropzone";
+import { ResumeFlow } from "./components/ResumeFlow";
 import { withToken } from "@/lib/api/client";
 import { useResume } from "@/lib/api/queries";
 import type { ResumeStructure, UploadResult } from "@/lib/api/types";
@@ -66,8 +66,8 @@ export default function ResumePage() {
         ) : s ? (
           <div className="grid gap-6">
             <p className="-mt-2 text-xs text-muted-foreground">
-              <code className="rounded bg-muted px-1">resume_input/{data?.file}</code>
-              {data?.updated && `, updated ${relativeTime(data.updated)}`}. Replacing it keeps the old one in resume_archive/.
+              <code className="rounded bg-muted px-1">{data?.file}</code>
+              {data?.updated && `, updated ${relativeTime(data.updated)}`}. Replacing it keeps a backup of the old one.
             </p>
 
             <section>

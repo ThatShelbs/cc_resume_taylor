@@ -6,9 +6,8 @@ __pycache__/
 .ruff_cache/
 .claude/settings.local.json
 
-# Personal career data: never commit. Folders are kept via .gitkeep.
-workspace/*/*
-!workspace/*/.gitkeep
+# Personal career data for the command-line workflow: never commit. Created on first run.
+/workspace/
 # Folder names used before the workspace/ layout; still ignored for older checkouts.
 /resume_input/
 /resume_create/

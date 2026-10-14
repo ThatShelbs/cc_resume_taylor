@@ -1,8 +1,8 @@
 import { BookCheck, Ban } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FactBank } from "@/features/evidence/components/FactBank";
-import { Guardrails } from "@/features/evidence/components/Guardrails";
+import { FactBank } from "./components/FactBank";
+import { Guardrails } from "./components/Guardrails";
 
 export default function EvidencePage() {
   return (

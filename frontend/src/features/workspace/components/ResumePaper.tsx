@@ -4,7 +4,7 @@
  * mirrors its fonts, spacing, and structure closely enough to judge flow.
  */
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import type { Draft } from "@/features/workspace/draft";
+import type { Draft } from "../draft";
 import type { TemplateKey } from "@/lib/api/types";
 
 const PAGE_W = 816; // 8.5in at 96dpi

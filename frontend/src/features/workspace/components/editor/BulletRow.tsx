@@ -5,7 +5,7 @@ import { useState, type KeyboardEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { AutoTextarea } from "@/components/ui/input";
 import { Tooltip } from "@/components/ui/tooltip";
-import { type EditableBullet } from "@/features/workspace/draft";
+import { type EditableBullet } from "../../draft";
 import type { FactInfo, LintIssue } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { CitationChip } from "./CitationChip";

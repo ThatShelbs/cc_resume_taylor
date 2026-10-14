@@ -81,10 +81,3 @@ def test_api_project_generate_edit_render(client):
     assert client.get(f"/api/projects/{pid}").status_code == 404
     assert client.post(f"/api/trash/{trash}/restore").status_code == 200
 
-
-def test_api_import_legacy_postings(client, workspace):
-    (workspace.input_dir / "in_job_example.txt").write_text(JOB_TEXT, encoding="utf-8")
-    candidates = client.get("/api/import/candidates").json()
-    assert candidates == [{"file": "in_job_example.txt", "company": "Example Co.", "role": "Director, Customer Analytics"}]
-    assert len(client.post("/api/import", json={"files": ["in_job_example.txt"]}).json()["created"]) == 1
-    assert client.get("/api/import/candidates").json() == []

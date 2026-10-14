@@ -28,7 +28,7 @@ The **authoritative tailoring rules** live in the `resume-tailoring` skill (`.cl
 
 ### CLI data folders
 
-`workspace/input`, `workspace/output`, `workspace/archive` are git-ignored (only `.gitkeep` tracked): they hold personal career data and must never be committed. The CLI uses them; the web app's data folder is outside the repo.
+`workspace/input`, `workspace/output`, `workspace/archive` are git-ignored and created on first use (nothing is tracked): they hold personal career data and must never be committed. The CLI uses them; the web app's data folder is outside the repo.
 
 - `input/`: `in_profile*` (contact info, experience, skills, accomplishments), `in_resume*` (a prior resume), `in_job*` (the posting), optional `fact_bank.yaml`.
 - `output/`: `out_resume_fname-lname_yyyy-mm-dd` as `.docx` and `.pdf`, plus `_report.md` (inputs, every warning, keyword coverage, each bullet with its cited facts, raw draft). `--cover-letter` adds `out_cover_letter_...docx/.pdf`.

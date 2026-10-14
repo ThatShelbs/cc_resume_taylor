@@ -1,8 +1,8 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import type { SaveState } from "@/features/workspace/components/SaveIndicator";
-import { fingerprint, fromDraft, toDraft, type Draft } from "@/features/workspace/draft";
+import type { SaveState } from "../components/SaveIndicator";
+import { fingerprint, fromDraft, toDraft, type Draft } from "../draft";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/api/queries";
 import type { LintResult, Project, ProjectDetail } from "@/lib/api/types";

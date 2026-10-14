@@ -8,11 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ImportCallout } from "@/features/projects/components/ImportCallout";
-import { ProjectCard } from "@/features/projects/components/ProjectCard";
-import { SetupCard } from "@/features/projects/components/SetupCard";
-import { StatsStrip } from "@/features/projects/components/StatsStrip";
-import { TrashSection } from "@/features/projects/components/TrashSection";
+import { ProjectCard } from "./components/ProjectCard";
+import { SetupCard } from "./components/SetupCard";
+import { StatsStrip } from "./components/StatsStrip";
+import { TrashSection } from "./components/TrashSection";
 import { useProjects, useSystem } from "@/lib/api/queries";
 import type { ProjectStatus } from "@/lib/api/types";
 import { ROUTES } from "@/lib/routes";
@@ -82,7 +81,6 @@ export function ProjectsPage() {
 
       <StatsStrip projects={projects} loading={isLoading} />
 
-      <ImportCallout />
 
       <div className="mt-6 flex flex-col gap-3 lg:flex-row lg:items-center">
         <div className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1 lg:pb-0">
