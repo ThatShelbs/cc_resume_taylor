@@ -83,6 +83,8 @@ export interface Project {
   status: ProjectStatus;
   notes: string;
   applied_on: string | null;
+  outcome_stage: number;
+  outcome_dates: Record<string, string>;
   template: TemplateKey;
   cover_letter: boolean;
   created_at: string;

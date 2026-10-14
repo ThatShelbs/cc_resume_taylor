@@ -81,7 +81,8 @@ def seed_workspace(paths: Paths, log=print) -> dict:
                             template=SEEDED.get(key, "classic"))
         project_ids.append(meta.id)
         store.update(meta.id, {"status": job["status"],
-                               **({"applied_on": "2026-09-22"} if job["status"] != "draft" else {})})
+                               **({"applied_on": "2026-09-22"} if job["status"] != "draft" else {}),
+                               **({"outcome_stage": job["outcome_stage"]} if "outcome_stage" in job else {})})
         if key not in SEEDED:
             continue
         result = copy.deepcopy(DEMO_RESULT)

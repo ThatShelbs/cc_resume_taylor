@@ -25,6 +25,7 @@ class ProjectPatch(BaseModel):
     status: str | None = None
     notes: str | None = None
     applied_on: str | None = None
+    outcome_stage: int | None = None
     template: str | None = None
     cover_letter: bool | None = None
 

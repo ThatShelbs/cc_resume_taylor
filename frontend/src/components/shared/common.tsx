@@ -116,6 +116,25 @@ export function StatusBadge({ status, className }: { status: ProjectStatus; clas
   );
 }
 
+/** Furthest stage reached in the hiring process; the index is what the API stores. */
+export const OUTCOME_STAGES = [
+  { key: "generated", label: "Generated", dot: "bg-muted-foreground/60" },
+  { key: "applied", label: "Applied", dot: "bg-primary" },
+  { key: "initial_screen", label: "Initial screen", dot: "bg-warning" },
+  { key: "additional_rounds", label: "Additional rounds", dot: "bg-warning" },
+  { key: "offer", label: "Offer made", dot: "bg-success" },
+] as const;
+
+export function OutcomeBadge({ stage, className }: { stage: number; className?: string }) {
+  const meta = OUTCOME_STAGES[stage] ?? OUTCOME_STAGES[0];
+  return (
+    <Badge variant="outline" className={className}>
+      <span className={cn("size-1.5 rounded-full", meta.dot)} />
+      {meta.label}
+    </Badge>
+  );
+}
+
 const SEVERITY_ICON: Record<Severity, LucideIcon> = { error: AlertCircle, warning: AlertTriangle, info: Info };
 const SEVERITY_TONE: Record<Severity, string> = {
   error: "text-destructive",
