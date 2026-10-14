@@ -16,7 +16,7 @@ RULE_COLOR = "1F2A44"
 @dataclass(frozen=True)
 class TemplateSpec:
     """Everything that differs between the resume templates. All of them stay
-    inside the ATS-safe envelope from resume_best_practices.md: one column,
+    inside the ATS-safe envelope from docs/resume-best-practices.md: one column,
     no tables, nothing in the header/footer layer, a standard font."""
 
     key: str

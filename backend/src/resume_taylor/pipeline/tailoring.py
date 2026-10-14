@@ -5,11 +5,12 @@ import json
 import re
 import sys
 
-from ..claude_cli import find_claude_cli, invoke_claude, strip_code_fence
+from resume_taylor.claude_cli import find_claude_cli, invoke_claude, strip_code_fence
+
 from .factbank import format_fact_bank
 from .prompts import CITATION_CONTRACT, FORMAT_SYSTEM_PROMPT, PIPELINE_OUTPUT_CONTRACT, load_tailoring_rules
 from .runtime import stage
-from .skills import extract_skills_from_draft
+from .skill_lists import extract_skills_from_draft
 
 
 def _flatten_skills(value) -> list:

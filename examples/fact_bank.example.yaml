@@ -1,4 +1,4 @@
-# Example fact bank. See build_fact_bank.py for how a real one is drafted.
+# Example fact bank. See resume-taylor-facts (pipeline/build_fact_bank.py) for how a real one is drafted.
 facts:
 - id: F001
   employer: Northwind Traders

@@ -6,7 +6,7 @@ from pathlib import Path
 
 import docx
 
-from ..config import INPUT_DIR
+from resume_taylor.config import INPUT_DIR
 
 
 def open_docx(path: Path) -> docx.Document:
@@ -50,7 +50,7 @@ def read_input_text(path: Path) -> str:
 def find_latest(prefix: str, exts: tuple = (".docx",), directory: Path | None = None) -> Path:
     """Newest matching file by modification time (not name, which would pick
     an alphabetically-last posting over the one just dropped in). Looks in
-    resume_input/ unless `directory` is given."""
+    workspace/input/ unless `directory` is given."""
     directory = directory or INPUT_DIR
     candidates = [p for p in directory.glob(f"{prefix}*") if p.suffix.lower() in exts]
     matches = sorted(candidates, key=lambda p: p.stat().st_mtime)

@@ -9,9 +9,9 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, v
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Plus, X } from "lucide-react";
 import { useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { AutoTextarea } from "@/components/ui/input";
 import { cn, uid } from "@/lib/utils";
-import { Button } from "../ui/button";
-import { AutoTextarea } from "../ui/primitives";
 
 interface Keyed {
   key: string;

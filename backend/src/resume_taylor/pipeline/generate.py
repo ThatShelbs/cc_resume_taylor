@@ -34,7 +34,7 @@ from .posting_analysis import (
 )
 from .result import RESULT_SCHEMA, report_deny_violations
 from .runtime import stage, warn
-from .skills import build_skill_groups, merge_and_sort_skills
+from .skill_lists import build_skill_groups, merge_and_sort_skills
 from .tailoring import tailor_content
 from .voice_pass import apply_voice_pass
 

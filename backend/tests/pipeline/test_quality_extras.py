@@ -5,7 +5,7 @@ import docx
 from resume_taylor.pipeline.guards_quality import limit_bullets_by_recency, warn_unsupported_title
 from resume_taylor.pipeline.render.docx_builder import build_docx
 from resume_taylor.pipeline.runtime import WARNINGS
-from resume_taylor.pipeline.skills import build_skill_groups, consistent_skill_groups
+from resume_taylor.pipeline.skill_lists import build_skill_groups, consistent_skill_groups
 from resume_taylor.pipeline.voice_pass import _acceptable
 
 

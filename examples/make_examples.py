@@ -1,7 +1,7 @@
 """
 Build the anonymized example inputs in this folder: a fake profile, prior
-resume, and job posting laid out exactly the way generate_resume.py parses
-them. Copy them into resume_input/ (renamed to in_profile*.docx,
+resume, and job posting laid out exactly the way the resume pipeline parses
+them. Copy them into workspace/input/ (renamed to in_profile*.docx,
 in_resume*.docx, in_job*.txt) to try the pipeline without real data, or use
 them as a template for your own files.
 
@@ -63,7 +63,7 @@ experience and strong stakeholder management skills.
 """
 
 FACT_BANK = """\
-# Example fact bank. See build_fact_bank.py for how a real one is drafted.
+# Example fact bank. See resume-taylor-facts (pipeline/build_fact_bank.py) for how a real one is drafted.
 facts:
 - id: F001
   employer: Northwind Traders

@@ -1,23 +1,24 @@
 import { lazy, Suspense } from "react";
 import { Route, Routes } from "react-router-dom";
 import { Toaster } from "sonner";
-import { AppShell } from "./components/layout/AppShell";
-import { TooltipProvider } from "./components/ui/overlays";
-import { Skeleton } from "./components/ui/primitives";
-import { JobCenter } from "./features/jobs/JobCenter";
-import { ProjectsPage } from "./features/projects/ProjectsPage";
-import { useTheme } from "./lib/theme";
+import { AppShell } from "@/components/layout/AppShell";
+import { Skeleton } from "@/components/ui/skeleton";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { JobCenter } from "@/features/jobs/JobCenter";
+import { ProjectsPage } from "@/features/projects/ProjectsPage";
+import { ROUTES } from "@/lib/routes";
+import { useTheme } from "@/lib/theme";
 
 // The workspace pulls in the PDF viewer (pdf.js), so it loads on demand.
-const WorkspacePage = lazy(() => import("./features/workspace/WorkspacePage"));
-const NewProjectPage = lazy(() => import("./features/projects/NewProjectPage"));
-const ProgressPage = lazy(() => import("./features/progress/ProgressPage"));
-const ProfilePage = lazy(() => import("./features/profile/ProfilePage"));
-const ResumePage = lazy(() => import("./features/resume/ResumePage"));
-const EvidencePage = lazy(() => import("./features/evidence/EvidencePage"));
-const SettingsPage = lazy(() => import("./features/settings/SettingsPage"));
-const OnboardingPage = lazy(() => import("./features/onboarding/OnboardingPage"));
-const NotFoundPage = lazy(() => import("./features/not-found/NotFoundPage"));
+const WorkspacePage = lazy(() => import("@/features/workspace/WorkspacePage"));
+const NewProjectPage = lazy(() => import("@/features/projects/NewProjectPage"));
+const ProgressPage = lazy(() => import("@/features/progress/ProgressPage"));
+const ProfilePage = lazy(() => import("@/features/profile/ProfilePage"));
+const ResumePage = lazy(() => import("@/features/resume/ResumePage"));
+const EvidencePage = lazy(() => import("@/features/evidence/EvidencePage"));
+const SettingsPage = lazy(() => import("@/features/settings/SettingsPage"));
+const OnboardingPage = lazy(() => import("@/features/onboarding/OnboardingPage"));
+const NotFoundPage = lazy(() => import("@/features/not-found/NotFoundPage"));
 
 function PageFallback() {
   return (
@@ -40,16 +41,16 @@ export function App() {
       <JobCenter>
         <Suspense fallback={<PageFallback />}>
           <Routes>
-            <Route path="/welcome" element={<OnboardingPage />} />
+            <Route path={ROUTES.welcome} element={<OnboardingPage />} />
             <Route element={<AppShell />}>
               <Route index element={<ProjectsPage />} />
-              <Route path="projects/new" element={<NewProjectPage />} />
-              <Route path="projects/:id" element={<WorkspacePage />} />
-              <Route path="progress" element={<ProgressPage />} />
-              <Route path="profile" element={<ProfilePage />} />
-              <Route path="resume" element={<ResumePage />} />
-              <Route path="evidence" element={<EvidencePage />} />
-              <Route path="settings" element={<SettingsPage />} />
+              <Route path={ROUTES.newProject} element={<NewProjectPage />} />
+              <Route path={ROUTES.project(":id")} element={<WorkspacePage />} />
+              <Route path={ROUTES.progress} element={<ProgressPage />} />
+              <Route path={ROUTES.profile} element={<ProfilePage />} />
+              <Route path={ROUTES.resume} element={<ResumePage />} />
+              <Route path={ROUTES.evidence} element={<EvidencePage />} />
+              <Route path={ROUTES.settings} element={<SettingsPage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Route>
           </Routes>

@@ -6,9 +6,9 @@ import json
 import tempfile
 from pathlib import Path
 
-from resume_taylor.app.main import create_app
-from resume_taylor.app.services.jobs import JobManager
-from resume_taylor.app.storage.paths import Paths
+from resume_taylor.api.main import create_app
+from resume_taylor.api.services.jobs import JobManager
+from resume_taylor.api.storage.paths import Paths
 from resume_taylor.layout import FRONTEND_DIR, REPO_ROOT
 
 

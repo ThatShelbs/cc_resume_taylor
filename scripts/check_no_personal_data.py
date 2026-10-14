@@ -25,7 +25,7 @@ FORBIDDEN = [
     (re.compile(r"(^|/)app_settings\.json$"), "app_settings.json"),
     (re.compile(r"^projects/"), "a job-application project folder"),
     (re.compile(r"^demo_workspace/"), "a generated demo workspace"),
-    (re.compile(r"^(resume_input|resume_create|resume_archive)/(?!\.gitkeep$)"), "personal resume data"),
+    (re.compile(r"^(workspace/[^/]+|resume_input|resume_create|resume_archive)/(?!\.gitkeep$)"), "personal resume data"),
     (re.compile(r"^do_not_claim\.txt$"), "your personal never-claim list (only the .example is tracked)"),
     (re.compile(r"(^|/)fact_bank\.ya?ml$"), "a personal fact bank (only examples/fact_bank.example.yaml is allowed)"),
     (re.compile(r"(^|/)(in|out)_(resume|profile|job|cover_letter)[^/]*$"), "an input or generated resume file"),

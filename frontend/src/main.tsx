@@ -1,13 +1,13 @@
 import "@fontsource-variable/inter";
 import "@fontsource-variable/fraunces/wght.css";
 import "@fontsource-variable/fraunces/wght-italic.css";
-import "./index.css";
+import "@/index.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
+import { ThemeProvider } from "@/lib/theme";
 import { App } from "./App";
-import { ThemeProvider } from "./lib/theme";
 
 const queryClient = new QueryClient({
   defaultOptions: {

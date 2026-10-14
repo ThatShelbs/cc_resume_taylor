@@ -2,18 +2,21 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Briefcase, Inbox, Plus, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { EmptyState, PageHeader } from "@/components/shared/common";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/ui/button";
-import { Select } from "@/components/ui/overlays";
-import { Input, Skeleton } from "@/components/ui/primitives";
-import { useProjects, useSystem } from "@/lib/api/queries";
-import type { ProjectStatus } from "@/lib/api/types";
-import { cn } from "@/lib/utils";
-import { SetupCard } from "@/features/projects/components/SetupCard";
-import { StatsStrip } from "@/features/projects/components/StatsStrip";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ImportCallout } from "@/features/projects/components/ImportCallout";
 import { ProjectCard } from "@/features/projects/components/ProjectCard";
+import { SetupCard } from "@/features/projects/components/SetupCard";
+import { StatsStrip } from "@/features/projects/components/StatsStrip";
 import { TrashSection } from "@/features/projects/components/TrashSection";
+import { useProjects, useSystem } from "@/lib/api/queries";
+import type { ProjectStatus } from "@/lib/api/types";
+import { ROUTES } from "@/lib/routes";
+import { cn } from "@/lib/utils";
 
 type Filter = "all" | "active" | ProjectStatus;
 type Sort = "updated" | "created" | "company";
@@ -68,7 +71,7 @@ export function ProjectsPage() {
         description="One project per job posting. Each keeps its tailored resume, every earlier version, and where you are in the process."
         actions={
           <Button asChild variant="gradient">
-            <Link to="/projects/new">
+            <Link to={ROUTES.newProject}>
               <Plus /> New project
             </Link>
           </Button>
@@ -137,7 +140,7 @@ export function ProjectsPage() {
             description="Paste a job posting and Resume Taylor tailors your real experience to it. Nothing is invented: every bullet traces back to your own materials."
             action={
               <Button asChild variant="gradient">
-                <Link to="/projects/new">
+                <Link to={ROUTES.newProject}>
                   <Plus /> New project
                 </Link>
               </Button>

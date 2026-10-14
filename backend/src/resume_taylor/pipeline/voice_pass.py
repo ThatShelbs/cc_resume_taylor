@@ -5,7 +5,8 @@ no fact can change; anything that fails those checks is discarded and the origin
 import json
 import re
 
-from ..claude_cli import find_claude_cli, invoke_claude
+from resume_taylor.claude_cli import find_claude_cli, invoke_claude
+
 from .guards_quality import AI_TELL_RE
 from .runtime import warn
 

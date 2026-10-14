@@ -1,7 +1,8 @@
 import { Scissors } from "lucide-react";
 import { Link } from "react-router-dom";
-import { EmptyState } from "@/components/shared/common";
+import { EmptyState } from "@/components/shared/EmptyState";
 import { Button } from "@/components/ui/button";
+import { ROUTES } from "@/lib/routes";
 
 export default function NotFoundPage() {
   return (
@@ -12,7 +13,7 @@ export default function NotFoundPage() {
         description="That page doesn't exist, or the project was moved to the trash."
         action={
           <Button asChild>
-            <Link to="/">Back to projects</Link>
+            <Link to={ROUTES.projects}>Back to projects</Link>
           </Button>
         }
       />

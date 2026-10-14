@@ -4,7 +4,7 @@ workspace, never real data) in light and dark, plus phone-width shots, and
 report any page that scrolls sideways on a phone.
 
     python scripts/make_demo_workspace.py --force
-    python launcher.py --data-root demo_workspace --no-browser     # in another terminal
+    python -m resume_taylor --data-root demo_workspace --no-browser     # in another terminal
     python scripts/capture_screenshots.py
 
 Needs `pip install playwright` (the backend[dev] extra). It drives the Microsoft

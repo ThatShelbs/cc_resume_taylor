@@ -4,13 +4,18 @@ import { ArrowRight, Copy, Loader2, MoreHorizontal, RefreshCcw, Trash2 } from "l
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Monogram, OUTCOME_STAGES, OutcomeBadge, STATUS_META, StatusBadge } from "@/components/shared/common";
+import { Monogram } from "@/components/shared/Monogram";
+import { OUTCOME_STAGES, OutcomeBadge, STATUS_META, StatusBadge } from "@/components/shared/status";
+import { AlertDialog, AlertDialogContent } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AlertDialog, AlertDialogContent, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger, Tooltip } from "@/components/ui/overlays";
-import { Badge, Card } from "@/components/ui/primitives";
+import { Card } from "@/components/ui/card";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Tooltip } from "@/components/ui/tooltip";
 import { api } from "@/lib/api/client";
 import { keys } from "@/lib/api/queries";
 import type { Project, ProjectStatus } from "@/lib/api/types";
+import { ROUTES } from "@/lib/routes";
 import { cn, relativeTime } from "@/lib/utils";
 
 export function ProjectCard({ project: p }: { project: Project }) {
@@ -33,7 +38,7 @@ export function ProjectCard({ project: p }: { project: Project }) {
     mutationFn: () => api.post<Project>(`/api/projects/${p.id}/duplicate`),
     onSuccess: (copy) => {
       refresh();
-      toast.success("Project duplicated", { action: { label: "Open", onClick: () => navigate(`/projects/${copy.id}`) } });
+      toast.success("Project duplicated", { action: { label: "Open", onClick: () => navigate(ROUTES.project(copy.id)) } });
     },
     onError: (e) => toast.error((e as Error).message),
   });
@@ -63,8 +68,8 @@ export function ProjectCard({ project: p }: { project: Project }) {
       <Card
         role="link"
         tabIndex={0}
-        onClick={() => navigate(`/projects/${p.id}`)}
-        onKeyDown={(e) => e.key === "Enter" && navigate(`/projects/${p.id}`)}
+        onClick={() => navigate(ROUTES.project(p.id))}
+        onKeyDown={(e) => e.key === "Enter" && navigate(ROUTES.project(p.id))}
         className="group flex h-full cursor-pointer flex-col p-4 transition-all hover:-translate-y-0.5 hover:border-foreground/15 hover:shadow-lift focus-visible:ring-2 focus-visible:ring-ring"
       >
         <div className="flex items-start gap-3">

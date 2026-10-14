@@ -7,12 +7,12 @@ __pycache__/
 .claude/settings.local.json
 
 # Personal career data: never commit. Folders are kept via .gitkeep.
-resume_input/*
-!resume_input/.gitkeep
-resume_create/*
-!resume_create/.gitkeep
-resume_archive/*
-!resume_archive/.gitkeep
+workspace/*/*
+!workspace/*/.gitkeep
+# Folder names used before the workspace/ layout; still ignored for older checkouts.
+/resume_input/
+/resume_create/
+/resume_archive/
 
 # Resume Taylor (browser app): per-project data and local state. Never commit.
 /projects/

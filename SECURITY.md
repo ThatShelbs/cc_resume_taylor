@@ -20,7 +20,7 @@ Generate, Draft, or Structure. Nothing is sent to the project authors or any oth
   `examples/` and `docs/`.
 - `python scripts/check_no_personal_data.py --install-hook` installs a pre-commit check that blocks
   resumes, keys, and project folders. CI runs the same check on every push, including all history.
-- Never post your data folder or `.env` in an issue. `Doctor.bat` output is safe to share.
+- Never post your data folder or `.env` in an issue. The output of `scripts\windows\Doctor.bat` is safe to share.
 
 ## If you already committed something private
 

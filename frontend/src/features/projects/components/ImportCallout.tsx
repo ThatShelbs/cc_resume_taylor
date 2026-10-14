@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FileDown } from "lucide-react";
 import { toast } from "sonner";
-import { Callout } from "@/components/shared/common";
+import { Callout } from "@/components/shared/Callout";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api/client";
 import { keys, useImportCandidates } from "@/lib/api/queries";

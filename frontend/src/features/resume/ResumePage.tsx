@@ -1,14 +1,16 @@
 import { Building2, ChevronDown, Download, GraduationCap, PenLine, Upload } from "lucide-react";
 import { useState } from "react";
-import { PageHeader } from "@/components/shared/common";
+import { PageHeader } from "@/components/shared/PageHeader";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Badge, Card, Skeleton } from "@/components/ui/primitives";
+import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ResumeDropzone } from "@/features/resume/components/ResumeDropzone";
+import { ResumeFlow } from "@/features/resume/components/ResumeFlow";
 import { withToken } from "@/lib/api/client";
 import { useResume } from "@/lib/api/queries";
 import type { ResumeStructure, UploadResult } from "@/lib/api/types";
 import { cn, relativeTime } from "@/lib/utils";
-import { ResumeFlow } from "./ResumeFlow";
-import { ResumeDropzone } from "./ResumeUpload";
 
 type Mode = { kind: "view" } | { kind: "replace"; upload?: UploadResult } | { kind: "edit"; structure: ResumeStructure };
 

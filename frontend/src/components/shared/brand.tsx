@@ -62,7 +62,7 @@ export function BeadBracelet({
   );
 }
 
-export function SparkleStar({ className, style }: { className?: string; style?: CSSProperties }) {
+function SparkleStar({ className, style }: { className?: string; style?: CSSProperties }) {
   return (
     <svg viewBox="0 0 24 24" aria-hidden className={className} style={style}>
       <path d="M12 0l2.7 9.3L24 12l-9.3 2.7L12 24l-2.7-9.3L0 12l9.3-2.7z" fill="currentColor" />

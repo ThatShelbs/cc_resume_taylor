@@ -1,7 +1,7 @@
 @echo off
 rem Double-click to install (first time only) and start Resume Taylor in your browser.
 rem It sets up Python packages and the Claude tool for you, then opens the app.
-rem Close this window to stop the app. Run "Doctor.bat" if something goes wrong.
+rem Close this window to stop the app. Run "scripts\windows\Doctor.bat" if something goes wrong.
 setlocal EnableExtensions
 cd /d "%~dp0"
 title Resume Taylor
@@ -100,7 +100,7 @@ echo.
 echo   Starting Resume Taylor. Your browser will open in a moment.
 echo   Keep this window open while you use the app; close it to stop.
 echo.
-"%VPY%" launcher.py %*
+"%VPY%" -m resume_taylor %*
 if errorlevel 1 pause
 exit /b 0
 

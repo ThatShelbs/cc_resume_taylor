@@ -5,7 +5,7 @@
  */
 
 const injected = document.querySelector('meta[name="taylor-token"]')?.getAttribute("content");
-export const TOKEN: string =
+const TOKEN: string =
   injected && injected !== "__TAYLOR_TOKEN__" ? injected : (import.meta.env.VITE_TAYLOR_TOKEN ?? "dev");
 
 export class ApiError extends Error {

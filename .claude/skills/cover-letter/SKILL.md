@@ -1,6 +1,6 @@
 ---
 name: cover-letter
-description: Rules for writing a short, truthful cover letter for ONE job posting from a candidate's already-tailored resume content and fact bank. Use when drafting or reviewing a cover letter in this project. generate_resume.py --cover-letter loads this file's body verbatim as the system prompt for the cover-letter call.
+description: Rules for writing a short, truthful cover letter for ONE job posting from a candidate's already-tailored resume content and fact bank. Use when drafting or reviewing a cover letter in this project. `python -m resume_taylor.pipeline --cover-letter` loads this file's body verbatim as the system prompt for the cover-letter call.
 ---
 
 # Cover letter

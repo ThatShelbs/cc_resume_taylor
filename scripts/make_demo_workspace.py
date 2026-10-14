@@ -6,16 +6,16 @@ hand-written (truthful to the persona) result rendered through the real
 pipeline, so the app looks lived-in without any Claude calls.
 
     python scripts/make_demo_workspace.py
-    python launcher.py --data-root demo_workspace
+    python -m resume_taylor --data-root demo_workspace
 """
 
 import argparse
 import sys
 from pathlib import Path
 
-from resume_taylor.app.services.demo import seed_workspace
-from resume_taylor.app.storage.fs import remove_tree
-from resume_taylor.app.storage.paths import Paths
+from resume_taylor.api.services.demo import seed_workspace
+from resume_taylor.api.storage.fs import remove_tree
+from resume_taylor.api.storage.paths import Paths
 from resume_taylor.layout import REPO_ROOT
 
 
@@ -34,7 +34,7 @@ def main() -> None:
     paths.ensure()
 
     seed_workspace(paths)
-    print(f"Demo workspace ready at {target}\nRun: python launcher.py --data-root {target.name}")
+    print(f"Demo workspace ready at {target}\nRun: python -m resume_taylor --data-root {target.name}")
 
 
 if __name__ == "__main__":

@@ -15,7 +15,7 @@ from .guards import (
     warn_unverified_skills,
 )
 from .runtime import PROGRESS_MARKERS, WARNINGS, warn
-from .skills import consistent_skill_groups
+from .skill_lists import consistent_skill_groups
 
 RESULT_SCHEMA = 1
 

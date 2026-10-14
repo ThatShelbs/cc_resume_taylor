@@ -1,6 +1,6 @@
 import type { Project } from "@/lib/api/types";
 
-export interface FunnelStep {
+interface FunnelStep {
   stage: number;
   /** Projects that reached this stage or went further. */
   count: number;

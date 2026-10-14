@@ -1,4 +1,5 @@
-import { Card, Skeleton } from "@/components/ui/primitives";
+import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { Project } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 

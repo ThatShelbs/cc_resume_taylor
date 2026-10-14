@@ -1,21 +1,21 @@
 """
-Generate a tailored resume from the files in resume_input/.
+Generate a tailored resume from the files in workspace/input/.
 
 Contact info, education, and each employer's company/location/dates/title are
-extracted deterministically from resume_input/in_profile* and in_resume*;
+extracted deterministically from workspace/input/in_profile* and in_resume*;
 there's no tailoring judgment involved in those fields, so the Claude Code CLI
 (using your logged-in subscription, not a billed API key) is only asked to
 produce the parts that actually require judgment: a tailored summary,
 per-employer bullets selected from true source material, and a tailored skills
 list (one drafting call, then a narrow JSON-transcription call). The result is
-written to resume_create/ as .docx + .pdf + a _report.md audit trail; any
-resume already there is moved to resume_archive/ (.docx and report only) first.
+written to workspace/output/ as .docx + .pdf + a _report.md audit trail; any
+resume already there is moved to workspace/archive/ (.docx and report only) first.
 
 Requires the Claude Code CLI to be installed and logged in (`claude /login`).
 
 Usage:
-    python generate_resume.py [--job PATH] [--model M] [--effort E] [--no-pdf] [--dry-run]
-    python -m resume_taylor.pipeline ...     (same thing)
+    python -m resume_taylor.pipeline [--job PATH] [--model M] [--effort E] [--no-pdf] [--dry-run]
+    resume-taylor-generate ...               (same thing, after `pip install -e backend`)
 """
 
 import argparse
@@ -25,8 +25,9 @@ import tempfile
 from datetime import datetime
 from pathlib import Path
 
-from ..config import ARCHIVE_DIR, CREATE_DIR, DO_NOT_CLAIM_EXAMPLE, DO_NOT_CLAIM_PATH, EFFORT, FACT_BANK_PATH, MODEL
-from ..layout import REPO_ROOT
+from resume_taylor.config import ARCHIVE_DIR, CREATE_DIR, DO_NOT_CLAIM_EXAMPLE, DO_NOT_CLAIM_PATH, EFFORT, FACT_BANK_PATH, MODEL
+from resume_taylor.layout import REPO_ROOT
+
 from .factbank import load_fact_bank
 from .generate import generate
 from .guards import load_deny_patterns
@@ -44,10 +45,10 @@ def parse_args(argv=None) -> argparse.Namespace:
     parser.add_argument(
         "--job",
         type=Path,
-        help="job posting .docx/.pdf/.txt/.md (default: newest resume_input/in_job*)",
+        help="job posting .docx/.pdf/.txt/.md (default: newest workspace/input/in_job*)",
     )
-    parser.add_argument("--profile", type=Path, help="profile .docx (default: newest resume_input/in_profile*)")
-    parser.add_argument("--resume", type=Path, help="prior resume .docx (default: newest resume_input/in_resume*)")
+    parser.add_argument("--profile", type=Path, help="profile .docx (default: newest workspace/input/in_profile*)")
+    parser.add_argument("--resume", type=Path, help="prior resume .docx (default: newest workspace/input/in_resume*)")
     parser.add_argument(
         "--fact-bank", type=Path, help=f"fact bank YAML (default: {FACT_BANK_PATH.relative_to(REPO_ROOT)})"
     )
@@ -60,7 +61,7 @@ def parse_args(argv=None) -> argparse.Namespace:
     parser.add_argument(
         "--archive-job",
         action="store_true",
-        help="after a successful run, move the job posting into resume_archive/",
+        help="after a successful run, move the job posting into workspace/archive/",
     )
     parser.add_argument("--model", default=MODEL, help=f"Claude model (default: {MODEL})")
     parser.add_argument("--effort", default=EFFORT, help=f"reasoning effort (default: {EFFORT})")
@@ -70,8 +71,8 @@ def parse_args(argv=None) -> argparse.Namespace:
         default=DEFAULT_TEMPLATE,
         help=f"resume layout (default: {DEFAULT_TEMPLATE})",
     )
-    parser.add_argument("--out-dir", type=Path, help="where to write outputs (default: resume_create/)")
-    parser.add_argument("--archive-dir", type=Path, help="where superseded outputs go (default: resume_archive/)")
+    parser.add_argument("--out-dir", type=Path, help="where to write outputs (default: workspace/output/)")
+    parser.add_argument("--archive-dir", type=Path, help="where superseded outputs go (default: workspace/archive/)")
     parser.add_argument("--result-json", type=Path, help="also save the structured, editable result here")
     parser.add_argument(
         "--render-json",
@@ -160,7 +161,7 @@ def main(argv=None) -> None:
     else:
         print(
             f"Fact bank: none at {display_path(ctx['fact_bank_path'])}; bullets won't be "
-            "provenance-checked. Run `python build_fact_bank.py` to create one."
+            "provenance-checked. Run `resume-taylor-facts` to create one."
         )
 
     if args.render_json:
@@ -206,7 +207,7 @@ def main(argv=None) -> None:
         if args.archive_job and not args.render_json:
             ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
             shutil.move(str(ctx["job_path"]), str(ARCHIVE_DIR / ctx["job_path"].name))
-            print(f"Archived job posting {ctx['job_path'].name} -> resume_archive/")
+            print(f"Archived job posting {ctx['job_path'].name} -> workspace/archive/")
 
     result["warnings"] = list(WARNINGS)
     if args.result_json:

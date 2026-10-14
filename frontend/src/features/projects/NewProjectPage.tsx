@@ -3,15 +3,20 @@ import { ArrowLeft, ClipboardPaste, FileUp, Sparkles, Wand2 } from "lucide-react
 import { useEffect, useRef, useState, type DragEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Callout, PageHeader } from "@/components/shared/common";
+import { Callout } from "@/components/shared/Callout";
+import { PageHeader } from "@/components/shared/PageHeader";
+import { TemplatePicker } from "@/components/shared/TemplatePicker";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, Field, Input, Switch, Textarea } from "@/components/ui/primitives";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Field } from "@/components/ui/field";
+import { Input, Textarea } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { useJobs } from "@/features/jobs/JobCenter";
 import { api } from "@/lib/api/client";
 import { keys, useSettings, useSystem } from "@/lib/api/queries";
 import type { JobSummary, Project, TemplateKey } from "@/lib/api/types";
+import { ROUTES } from "@/lib/routes";
 import { cn } from "@/lib/utils";
-import { TemplatePicker } from "./TemplatePicker";
 
 const MIN_POSTING = 40;
 
@@ -70,7 +75,7 @@ export default function NewProjectPage() {
       } else {
         toast.success("Project saved");
       }
-      navigate(`/projects/${project.id}`);
+      navigate(ROUTES.project(project.id));
     },
     onError: (e) => toast.error((e as Error).message),
   });
@@ -109,7 +114,7 @@ export default function NewProjectPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
       <Button asChild variant="ghost" size="sm" className="-ml-2 mb-3 text-muted-foreground">
-        <Link to="/">
+        <Link to={ROUTES.projects}>
           <ArrowLeft /> Projects
         </Link>
       </Button>
@@ -125,7 +130,7 @@ export default function NewProjectPage() {
           title="Finish setup to generate"
           action={
             <Button asChild size="sm" variant="outline">
-              <Link to="/welcome">Start setup</Link>
+              <Link to={ROUTES.welcome}>Start setup</Link>
             </Button>
           }
         >

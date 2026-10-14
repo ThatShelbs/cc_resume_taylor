@@ -1,6 +1,6 @@
 import { PenLine } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Input } from "@/components/ui/primitives";
+import { Input } from "@/components/ui/input";
 
 export function EditableTitle({ value, onSave }: { value: string; onSave: (v: string) => void }) {
   const [editing, setEditing] = useState(false);

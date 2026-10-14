@@ -1,29 +1,16 @@
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  BarChart3,
-  Briefcase,
-  FileText,
-  Menu,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Plus,
-  Search,
-  Settings,
-  ShieldCheck,
-  UserRound,
-  X,
-  type LucideIcon,
-} from "lucide-react";
+import { BarChart3, Briefcase, FileText, Menu, PanelLeftClose, PanelLeftOpen, Plus, Search, Settings, ShieldCheck, UserRound, X, type LucideIcon } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
-import { Logo } from "@/components/shared/common";
 import { Button } from "@/components/ui/button";
-import { Tooltip } from "@/components/ui/overlays";
-import { Kbd } from "@/components/ui/primitives";
+import { Kbd } from "@/components/ui/kbd";
+import { Tooltip } from "@/components/ui/tooltip";
 import { useProjects, useSystem } from "@/lib/api/queries";
+import { ROUTES } from "@/lib/routes";
 import { cn, isMac } from "@/lib/utils";
 import { CommandMenu } from "./CommandMenu";
 import { HealthBanner } from "./HealthBanner";
+import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
 
 interface NavItem {
@@ -123,7 +110,7 @@ export function AppShell() {
 
   const items: NavItem[] = [
     {
-      to: "/",
+      to: ROUTES.projects,
       label: "Projects",
       icon: Briefcase,
       end: true,
@@ -131,18 +118,18 @@ export function AppShell() {
         <span className="rounded-full bg-secondary px-1.5 text-[11px] tabular-nums text-muted-foreground">{projects.length}</span>
       ) : undefined,
     },
-    { to: "/progress", label: "Progress", icon: BarChart3 },
-    { to: "/profile", label: "Profile", icon: UserRound, badge: system && !system.inputs.profile ? <Dot /> : undefined },
-    { to: "/resume", label: "Base resume", icon: FileText, badge: system && !system.inputs.resume ? <Dot /> : undefined },
-    { to: "/evidence", label: "Evidence", icon: ShieldCheck },
-    { to: "/settings", label: "Settings", icon: Settings },
+    { to: ROUTES.progress, label: "Progress", icon: BarChart3 },
+    { to: ROUTES.profile, label: "Profile", icon: UserRound, badge: system && !system.inputs.profile ? <Dot /> : undefined },
+    { to: ROUTES.resume, label: "Base resume", icon: FileText, badge: system && !system.inputs.resume ? <Dot /> : undefined },
+    { to: ROUTES.evidence, label: "Evidence", icon: ShieldCheck },
+    { to: ROUTES.settings, label: "Settings", icon: Settings },
   ];
 
   const sidebar = (mobile: boolean) => (
     <div className="relative flex h-full flex-col gap-4 p-3">
       <div className="bead-rule absolute inset-x-0 top-0 h-[3px] opacity-90" aria-hidden />
       <div className={cn("flex h-10 items-center justify-between px-1", collapsed && !mobile && "justify-center px-0")}>
-        <Link to="/" aria-label="Resume Taylor home">
+        <Link to={ROUTES.projects} aria-label="Resume Taylor home">
           <Logo withText={mobile || !collapsed} />
         </Link>
         {mobile && (
@@ -157,7 +144,7 @@ export function AppShell() {
         className={cn("w-full", collapsed && !mobile && "size-9 self-center p-0")}
         aria-label="New project"
       >
-        <Link to="/projects/new">
+        <Link to={ROUTES.newProject}>
           <Plus />
           {(mobile || !collapsed) && "New project"}
         </Link>
@@ -225,7 +212,7 @@ export function AppShell() {
           <Button variant="ghost" size="icon-sm" className="lg:hidden" onClick={() => setMobileOpen(true)} aria-label="Open menu">
             <Menu />
           </Button>
-          <Link to="/" className="lg:hidden">
+          <Link to={ROUTES.projects} className="lg:hidden">
             <Logo withText={false} />
           </Link>
           <button

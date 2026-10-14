@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildFunnel } from "@/features/progress/funnel";
 import type { Project } from "@/lib/api/types";
+import { buildFunnel } from "./funnel";
 
 const project = (patch: Partial<Project>): Project =>
   ({ id: "p", status: "draft", outcome_stage: 0, outcome_dates: {}, has_result: false, ...patch }) as Project;
