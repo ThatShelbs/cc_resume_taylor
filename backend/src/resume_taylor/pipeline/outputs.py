@@ -8,6 +8,7 @@ from pathlib import Path
 
 from ..config import ARCHIVE_DIR, CREATE_DIR, EFFORT, MODEL
 from ..layout import REPO_ROOT
+from .render.ats_lint import lint_docx, lint_pdf_text
 from .render.docx_builder import build_cover_letter_docx, build_docx
 from .render.pdf import convert_to_pdf, count_pdf_pages
 from .report import write_report
@@ -86,6 +87,8 @@ def write_outputs(
         pdf_path = out_dir / f"{name}.pdf"
         build(docx_path)
         print(f"Wrote {display_path(docx_path)}")
+        if name == base_name:
+            lint_docx(docx_path, data)
         if no_pdf:
             continue
         stage("pdf")
@@ -97,6 +100,7 @@ def write_outputs(
             continue
         pages = count_pdf_pages(pdf_path)
         if name == base_name:
+            lint_pdf_text(pdf_path, data)
             page_count = pages
             print(f"Resume length: {pages} page(s)")
             if pages > 2:
@@ -121,5 +125,6 @@ def write_outputs(
         result.get("draft", ""),
         cover_letter=[(p["text"], p.get("ids") or []) for p in result.get("cover_letter") or []] or None,
         page_count=page_count,
+        requirements=result.get("requirements"),
     )
     return report_path

@@ -10,7 +10,7 @@ system_prompt = ""
 if "--system-prompt-file" in args:
     with open(args[args.index("--system-prompt-file") + 1], encoding="utf-8") as fh:
         system_prompt = fh.read()
-sys.stdin.read()
+user_message = sys.stdin.read()
 
 DRAFT = """## Summary
 Analytics leader with 15+ years of experience — turning data into decisions.
@@ -57,7 +57,23 @@ Thank you for your time and consideration.
 if os.environ.get("FAKE_CLAUDE_MODE") == "prohibited":
     RESUME_JSON["summary"] = "Certified Six Sigma black belt leader."
 
-if "text-to-JSON transcription tool" in system_prompt:
+ANALYSIS = {
+    "target_title": "Head of Marketing Analytics",
+    "must_have": ["Marketing Mix Modeling", "A/B Testing", "Kubernetes"],
+    "nice_to_have": ["Forecasting"],
+    "tools": ["Python", "dbt"],
+    "acronym_pairs": [["MMM", "Marketing Mix Modeling"]],
+}
+
+if os.environ.get("FAKE_CLAUDE_MODE") == "redraft":
+    # Supported terms the first draft omits; the draft that follows a REVISION NOTE includes them.
+    ANALYSIS["must_have"] = ["Customer Segmentation", "Churn Modeling"]
+    if "REVISION NOTE" in user_message:
+        DRAFT += "**Methods:** Customer Segmentation | Churn Modeling\n"
+
+if "job posting analyzer" in system_prompt:
+    reply = json.dumps(ANALYSIS)
+elif "text-to-JSON transcription tool" in system_prompt:
     reply = "<RESUME_JSON>" + json.dumps(RESUME_JSON) + "</RESUME_JSON>"
 elif "COVER_LETTER" in system_prompt:
     reply = LETTER

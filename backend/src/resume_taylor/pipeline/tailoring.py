@@ -66,6 +66,7 @@ def tailor_content(
     fact_bank: dict | None = None,
     model: str | None = None,
     effort: str | None = None,
+    extra_context: str = "",
 ) -> dict:
     claude_bin = find_claude_cli()
     companies = [job["company"] for job in jobs]
@@ -88,6 +89,8 @@ JOB POSTING (tailor emphasis, ordering, and phrasing to this):
 
 FACT BANK (authoritative, employer-tagged facts; build every bullet from these and cite their ids):
 {format_fact_bank(fact_bank)}"""
+    if extra_context:
+        user_message += f"\n\n{extra_context}"
     if deny_patterns:
         prohibited = "\n".join(f"- {p.pattern}" for p in deny_patterns)
         user_message += f"""

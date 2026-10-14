@@ -42,4 +42,11 @@ def test_extract_skills_flat_heading():
 def test_merge_and_sort_skills_backfills_only_posting_terms():
     profile = {"tools": ["Python", "Tableau"], "skills": ["Forecasting"]}
     merged = merge_and_sort_skills(["sql", "Python (pandas)"], profile, "We need Python and Tableau.")
-    assert merged == ["Python (pandas)", "sql", "Tableau"]
+    # Skills the posting names come first, then the rest, alphabetical within each group.
+    assert merged == ["Python (pandas)", "Tableau", "sql"]
+
+
+def test_merge_orders_posting_terms_first_then_alphabetical():
+    profile = {"tools": [], "skills": []}
+    merged = merge_and_sort_skills(["Zeta", "Alpha", "Forecasting", "C++"], profile, "Forecasting and C++ and Zeta.")
+    assert merged == ["C++", "Forecasting", "Zeta", "Alpha"]

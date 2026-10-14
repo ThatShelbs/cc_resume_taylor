@@ -145,7 +145,8 @@ def merge_and_sort_skills(tailored_skills: list, profile_skills: dict, job_text:
     the job posting itself explicitly names it too (e.g. "Python" shouldn't
     be missing when both the profile and the posting mention it) — it doesn't
     dump the whole profile in, which would fight the model's curation. Merge,
-    dedup, and sort alphabetically."""
+    dedup, then order skills the posting names first (what a screener and a
+    recruiter's eye hit first), alphabetical within each group."""
     job_lower = job_text.lower()
     must_include = [
         s
@@ -158,4 +159,42 @@ def merge_and_sort_skills(tailored_skills: list, profile_skills: dict, job_text:
         key = skill_key(skill)
         if key and key not in seen:
             seen[key] = skill
-    return sorted(seen.values(), key=str.lower)
+    return sorted(
+        seen.values(),
+        key=lambda s: (not re.search(rf"(?<!\w){re.escape(skill_key(s))}(?!\w)", job_lower), s.lower()),
+    )
+
+
+def build_skill_groups(skills: list, draft: str) -> list | None:
+    """Group the final skills under the category labels the draft used ("**Tools:** a | b"),
+    keeping the final (posting-first) order inside each group. Skills the draft didn't
+    categorize go under "Other". None when the draft had no categories or only one group
+    results, in which case the docx renders a flat line."""
+    category_of = {}
+    for line in draft.splitlines():
+        match = CATEGORY_LINE_RE.match(line.strip())
+        if not match:
+            continue
+        label = match.group(1).strip()
+        if len(label.split()) > 4:
+            continue
+        for raw in _split_skill_items(match.group(2)):
+            cleaned = clean_skill_label(raw)
+            if cleaned:
+                category_of.setdefault(skill_key(cleaned), label)
+    if not category_of:
+        return None
+    groups = {}
+    for skill in skills:
+        groups.setdefault(category_of.get(skill_key(skill), "Other"), []).append(skill)
+    if len(groups) < 2:
+        return None
+    return [{"label": label, "skills": items} for label, items in groups.items()]
+
+
+def consistent_skill_groups(groups, skills: list) -> list | None:
+    """The groups only if they still describe exactly the current skills list (an edit in
+    the app can change it); otherwise None so the flat list is rendered."""
+    if not groups or {skill_key(s) for s in skills} != {skill_key(s) for g in groups for s in g["skills"]}:
+        return None
+    return groups

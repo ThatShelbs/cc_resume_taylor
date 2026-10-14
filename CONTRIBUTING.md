@@ -129,6 +129,8 @@ python generate_resume.py          # same as: python -m resume_taylor.pipeline
 | `--profile`, `--resume`, `--fact-bank`, `--deny` | Use these input files instead of the defaults |
 | `--template {classic,modern,compact}` | Resume layout (default: classic) |
 | `--cover-letter` | Also write a cover letter, held to the same citation and never-claim checks |
+| `--no-analysis` | Skip the posting-analysis call and the one-time redraft (fewer Claude calls) |
+| `--voice-pass` | Rewrite bullets that use generic phrasing in your own wording (one extra call; numbers must stay identical) |
 | `--out-dir`, `--archive-dir` | Where outputs and superseded outputs go |
 | `--result-json PATH` | Also save the structured, editable result |
 | `--render-json PATH` | Re-validate and render a saved result without calling Claude |
