@@ -1,10 +1,9 @@
 import { Card } from "@/components/ui/card";
 import { AutoTextarea } from "@/components/ui/input";
-import { ExperienceCard } from "@/features/workspace/components/editor/ExperienceCard";
-import { IssueBadge } from "@/features/workspace/components/editor/IssueBadge";
-import { SkillsEditor } from "@/features/workspace/components/editor/SkillsEditor";
-import { type Draft } from "@/features/workspace/draft";
-import { Update } from "@/features/workspace/draft";
+import { ExperienceCard } from "./editor/ExperienceCard";
+import { IssueBadge } from "./editor/IssueBadge";
+import { SkillsEditor } from "./editor/SkillsEditor";
+import type { Draft, Update } from "../draft";
 import type { FactInfo, LintResult } from "@/lib/api/types";
 
 export function ContentEditor({

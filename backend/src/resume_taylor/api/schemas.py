@@ -56,10 +56,6 @@ class PhraseBody(BaseModel):
     phrase: str
 
 
-class ImportBody(BaseModel):
-    files: list[str]
-
-
 class ApiKeyBody(BaseModel):
     key: str
 

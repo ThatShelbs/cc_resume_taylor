@@ -182,7 +182,7 @@ def open_when_ready(port: int, url: str, open_browser: bool) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Start Resume Taylor and open it in your browser.")
-    parser.add_argument("--data-root", type=Path, help="folder with resume_input/, projects/, ... (default: ResumeTaylor in your local app data folder)")
+    parser.add_argument("--data-root", type=Path, help="folder for your inputs, projects and settings (default: ResumeTaylor in your local app data folder)")
     parser.add_argument("--port", type=int, default=8765, help="first port to try (default 8765)")
     parser.add_argument("--no-browser", action="store_true", help="don't open a browser tab")
     parser.add_argument("--rebuild", action="store_true", help="force a rebuild of the web app")

@@ -63,7 +63,6 @@ class ProjectMeta(BaseModel):
     rendered_at: str | None = None
     last_generate: LastRun | None = None
     last_render: LastRun | None = None
-    imported_from: str | None = None
 
 
 EDITABLE_FIELDS = {"name", "company", "role", "url", "status", "notes", "applied_on", "outcome_stage", "template", "cover_letter"}
@@ -185,8 +184,7 @@ class ProjectStore:
         return pid
 
     def create(self, *, job_text: str, company: str = "", role: str = "", name: str = "", url: str = "",
-               template: str = DEFAULT_TEMPLATE, cover_letter: bool = False,
-               imported_from: str | None = None) -> ProjectMeta:
+               template: str = DEFAULT_TEMPLATE, cover_letter: bool = False) -> ProjectMeta:
         job_text = job_text.strip()
         if len(job_text) < 40:
             raise ProjectError("Paste the full job posting (it looks too short to tailor against).")
@@ -202,7 +200,6 @@ class ProjectStore:
             cover_letter=cover_letter,
             created_at=stamp,
             updated_at=stamp,
-            imported_from=imported_from,
         )
         self._write_meta(meta)
         self.set_job_text(pid, job_text)

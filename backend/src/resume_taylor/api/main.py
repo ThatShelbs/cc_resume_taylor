@@ -14,7 +14,7 @@ from resume_taylor.config import DO_NOT_CLAIM_EXAMPLE
 from .. import __version__
 from .context import AppContext
 from .errors import register_error_handlers
-from .routers import demo, facts, imports, profile, projects, resume, settings, system, trash
+from .routers import demo, facts, profile, projects, resume, settings, system, trash
 from .routers import jobs as jobs_router
 from .security import LOOPBACK_HOSTS, install_security
 from .services.jobs import JobManager
@@ -47,7 +47,7 @@ def create_app(paths: Paths, token: str, *, extra_hosts: set | None = None,
     install_security(app, token, allowed_hosts)
     register_error_handlers(app)
 
-    for module in (system, settings, demo, profile, resume, facts, projects, trash, imports, jobs_router):
+    for module in (system, settings, demo, profile, resume, facts, projects, trash, jobs_router):
         app.include_router(module.router)
     app.include_router(spa_router(token))  # catch-all: must come last
     return app
