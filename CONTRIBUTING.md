@@ -71,7 +71,7 @@ flowchart LR
 ```
 
 - **The pipeline stays the single source of truth.** The app keeps your inputs in
-  the exact files the command-line pipeline reads (`resume_input/in_profile*.docx`,
+  the exact files the command-line pipeline reads (`in_profile*.docx`,
   `in_resume*.docx`, `fact_bank.yaml`, `do_not_claim.txt`), and runs
   the pipeline (`python -m resume_taylor.pipeline`) as a subprocess for every generation and re-render. The
   tailoring rules live only in the `resume-tailoring` skill.
@@ -92,40 +92,44 @@ backend/                     the Python side (pip install -e backend)
   src/resume_taylor/
     layout.py, config.py     where things live; settings from the environment / .env
     claude_cli.py            running the `claude` CLI as a text-generation step
-    launcher.py              starts the app and opens the browser
-    pipeline/                the resume pipeline (parsing, Claude calls, guards, output)
+    launcher.py              starts the app and opens the browser (python -m resume_taylor)
+    pipeline/                the tailoring engine (parsing, Claude calls, guards, output); no web code
       render/                templates, .docx builder, PDF export
-    app/                     the browser app's FastAPI backend
+    api/                     the FastAPI backend of the web app
       routers/               the HTTP API, one module per area
-      services/              background jobs, live lint, sample data, system status
-      storage/               files on disk: projects, profile, facts, settings, paths
+      services/              background jobs, pipeline runner, live checks, sample data, OS integration
+      storage/               files on disk: projects, profile, resume import, facts, settings, paths
     sample_data/, resources/ the fictional demo applicant; the starter never-claim list
-  tests/                     pipeline/ and app/ tests (no test makes a Claude call)
+  tests/                     pipeline/ and api/ tests (no test makes a Claude call)
 frontend/                    the React app (Vite + TypeScript); dist/ is committed
-  src/features/              one folder per screen
-  src/components/            ui/ (primitives), layout/, shared/ (app-wide pieces)
-  src/lib/api/               API client, react-query hooks, SSE, types, generated schema
+  src/features/              one folder per screen: XPage.tsx, components/, hooks/, small logic modules
+  src/components/            ui/ (Radix wrappers), layout/ (app shell), shared/ (used by several screens)
+  src/lib/                   API client + react-query hooks + SSE + types, routes, theme, utils
 .claude/skills/              the tailoring rules (single source of truth)
-docs/  examples/  scripts/   brand and screenshots, sample inputs, dev/maintenance scripts
-generate_resume.py           thin shims so `python generate_resume.py` (and
-build_fact_bank.py           `python build_fact_bank.py`, `python launcher.py`)
-launcher.py                  keep working; the code is in the package
+docs/                        brand assets, README screenshots, cached resume best practices
+examples/                    anonymized sample inputs (see examples/README.md)
+scripts/                     dev and maintenance scripts (see scripts/README.md)
+  windows/                   Doctor, Update and Create Desktop Shortcut helpers
+workspace/                   git-ignored data for the command-line workflow: input/, output/, archive/
+Launch Resume Taylor.bat     the double-click installer and launcher for non-technical users
 ```
 
 See [CLAUDE.md](CLAUDE.md) for internals.
 
 ## Command-line use
 
-The original CLI still works on its own, with `resume_input/` as the inputs and
-`resume_create/` / `resume_archive/` as the outputs:
+The command-line pipeline works on its own, with `workspace/input/` as the inputs and
+`workspace/output/` / `workspace/archive/` as the outputs. (Older checkouts used
+`resume_input/`, `resume_create/` and `resume_archive/` at the repo root; move their
+contents into the matching `workspace/` folders.)
 
 ```bash
-python generate_resume.py          # same as: python -m resume_taylor.pipeline
+python -m resume_taylor.pipeline   # or the installed command: resume-taylor-generate
 ```
 
 | Flag | What it does |
 |------|--------------|
-| `--job PATH` | Tailor to this posting instead of the newest `resume_input/in_job*` file |
+| `--job PATH` | Tailor to this posting instead of the newest `workspace/input/in_job*` file |
 | `--profile`, `--resume`, `--fact-bank`, `--deny` | Use these input files instead of the defaults |
 | `--template {classic,modern,compact}` | Resume layout (default: classic) |
 | `--cover-letter` | Also write a cover letter, held to the same citation and never-claim checks |
@@ -135,7 +139,7 @@ python generate_resume.py          # same as: python -m resume_taylor.pipeline
 | `--model M`, `--effort E` | Override `CLAUDE_MODEL` / `CLAUDE_EFFORT` |
 | `--no-pdf`, `--dry-run`, `--archive-job` | Skip PDF export / write nothing / archive the posting after a run |
 
-Optional inputs: `resume_input/fact_bank.yaml` (draft it with
-`python build_fact_bank.py`, then edit by hand or in the app) and `do_not_claim.txt`
-(one case-insensitive regex per line). Optional `.env` settings: `CLAUDE_MODEL`,
+Optional inputs: `workspace/input/fact_bank.yaml` (draft it with
+`resume-taylor-facts`, then edit by hand or in the app) and `do_not_claim.txt` in the repo
+root (one case-insensitive regex per line). Optional `.env` settings: `CLAUDE_MODEL`,
 `CLAUDE_EFFORT`, `CLAUDE_TIMEOUT`.

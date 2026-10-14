@@ -11,10 +11,10 @@ from dotenv import load_dotenv
 from .layout import PACKAGE_DIR, REPO_ROOT, SKILLS_DIR
 
 # The command-line pipeline's own folders (git-ignored personal data). The app keeps
-# its data outside the repo instead; see resume_taylor.app.storage.paths.
-INPUT_DIR = REPO_ROOT / "resume_input"
-CREATE_DIR = REPO_ROOT / "resume_create"
-ARCHIVE_DIR = REPO_ROOT / "resume_archive"
+# its data outside the repo instead; see resume_taylor.api.storage.paths.
+INPUT_DIR = REPO_ROOT / "workspace" / "input"
+CREATE_DIR = REPO_ROOT / "workspace" / "output"
+ARCHIVE_DIR = REPO_ROOT / "workspace" / "archive"
 
 # Load .env before reading any setting from the environment (build_fact_bank
 # imports this module, so it picks these up too).

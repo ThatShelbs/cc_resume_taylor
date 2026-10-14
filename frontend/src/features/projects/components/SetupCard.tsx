@@ -1,13 +1,15 @@
 import { ArrowRight, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Sequins } from "@/components/shared/brand";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Badge, Card } from "@/components/ui/primitives";
+import { Card } from "@/components/ui/card";
+import { ROUTES } from "@/lib/routes";
 
 export function SetupCard({ profile, resume }: { profile: boolean; resume: boolean }) {
   const steps = [
-    { done: resume, label: "Upload your base resume", to: "/resume" },
-    { done: profile, label: "Confirm your profile", to: "/profile" },
+    { done: resume, label: "Upload your base resume", to: ROUTES.resume },
+    { done: profile, label: "Confirm your profile", to: ROUTES.profile },
   ];
   return (
     <Card className="relative mt-6 overflow-hidden border-primary/25">
@@ -32,7 +34,7 @@ export function SetupCard({ profile, resume }: { profile: boolean; resume: boole
           </div>
         </div>
         <Button asChild>
-          <Link to="/welcome">
+          <Link to={ROUTES.welcome}>
             Start setup <ArrowRight />
           </Link>
         </Button>

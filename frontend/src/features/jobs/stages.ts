@@ -1,6 +1,6 @@
 import type { JobSummary } from "@/lib/api/types";
 
-export interface StepDef {
+interface StepDef {
   key: string;
   label: string;
   detail: string;

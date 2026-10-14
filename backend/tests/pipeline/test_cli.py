@@ -1,7 +1,7 @@
 """The pipeline as a command: end to end against a fake `claude`, and --render-json.
 
-`run_cli` starts a real subprocess through the root `generate_resume.py` shim (the
-same entry point people use), with a stand-in `claude` first on PATH.
+`run_cli` starts a real subprocess with `python -m resume_taylor.pipeline` (the same entry
+point people use), with a stand-in `claude` first on PATH.
 """
 
 import json
@@ -55,9 +55,12 @@ def inputs(tmp_path):
     ]
 
 
+PIPELINE = [sys.executable, "-m", "resume_taylor.pipeline"]
+
+
 def run_cli(args, env):
     return subprocess.run(
-        [sys.executable, str(REPO_ROOT / "generate_resume.py"), *map(str, args)],
+        [*PIPELINE, *map(str, args)],
         capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=str(REPO_ROOT), env=env,
     )
 
@@ -105,18 +108,15 @@ def test_generate_aborts_on_a_never_claim_hit(tmp_path, inputs, fake_claude_env)
 
 
 def test_entry_points_all_answer_help():
-    for script in ("generate_resume.py", "build_fact_bank.py", "launcher.py"):
-        proc = subprocess.run([sys.executable, str(REPO_ROOT / script), "--help"], capture_output=True, text=True,
-                              encoding="utf-8", cwd=str(REPO_ROOT))
-        assert proc.returncode == 0 and "usage:" in proc.stdout, script
-    proc = subprocess.run([sys.executable, "-m", "resume_taylor.pipeline", "--help"], capture_output=True, text=True,
-                          encoding="utf-8", cwd=str(REPO_ROOT), env={**os.environ, "PYTHONPATH": str(REPO_ROOT / "backend" / "src")})
-    assert proc.returncode == 0 and "usage:" in proc.stdout
+    for module in ("resume_taylor.pipeline", "resume_taylor.pipeline.build_fact_bank", "resume_taylor"):
+        proc = subprocess.run([sys.executable, "-m", module, "--help"], capture_output=True, text=True, encoding="utf-8",
+                              cwd=str(REPO_ROOT), env={**os.environ, "PYTHONPATH": str(REPO_ROOT / "backend" / "src")})
+        assert proc.returncode == 0 and "usage:" in proc.stdout, module
 
 
 def render(workspace, result_path, out_dir, *extra):
     return subprocess.run(
-        [sys.executable, str(REPO_ROOT / "generate_resume.py"),
+        [*PIPELINE,
          "--profile", str(workspace.latest("in_profile")),
          "--resume", str(workspace.latest("in_resume")),
          "--job", str(EXAMPLES_DIR / "in_job_example.txt"),

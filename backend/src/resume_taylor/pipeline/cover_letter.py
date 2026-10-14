@@ -4,8 +4,9 @@ fact bank, then the same provenance rules as bullets."""
 import re
 import sys
 
-from ..claude_cli import find_claude_cli, invoke_claude, strip_code_fence
-from ..config import COVER_LETTER_SKILL_PATH
+from resume_taylor.claude_cli import find_claude_cli, invoke_claude, strip_code_fence
+from resume_taylor.config import COVER_LETTER_SKILL_PATH
+
 from .factbank import extract_citations, format_fact_bank
 from .guards import remove_em_dashes, warn_unsupported_numbers
 from .prompts import load_skill

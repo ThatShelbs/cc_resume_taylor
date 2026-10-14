@@ -82,12 +82,12 @@ Double-click **`Launch Resume Taylor.bat`**.
 - Or click **Get started**, upload the resume you already have (PDF or Word), confirm your
   profile, and paste your first job posting.
 
-**Nice extras:** double-click `Create Desktop Shortcut.bat` for a desktop icon.
+**Nice extras:** double-click `Create Desktop Shortcut.bat` (in the `scripts\windows` folder) for a desktop icon.
 Microsoft Word is used for PDF export; without it you still get Word (`.docx`) files.
 
 ### Updating
 
-Double-click `Update.bat` (if you used `git clone`), or download the new ZIP and unzip it
+Double-click `Update.bat` in the `scripts\windows` folder (if you used `git clone`), or download the new ZIP and unzip it
 to a new folder. Your data is kept outside the code folder, so an update never touches it.
 
 ## What it does
@@ -144,7 +144,7 @@ Claude when you press Generate.
 
 ## Troubleshooting
 
-Double-click **`Doctor.bat`** for a plain-English checklist. It hides your user name, so it is
+Double-click **`Doctor.bat`** (in the `scripts\windows` folder) for a plain-English checklist. It hides your user name, so it is
 safe to paste into a bug report.
 
 | What you see | What to do |

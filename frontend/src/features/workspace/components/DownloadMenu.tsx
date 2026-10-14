@@ -1,6 +1,6 @@
 import { ChevronDown, Download, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/overlays";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { projectFileUrl } from "@/lib/api/client";
 import type { FileInfo } from "@/lib/api/types";
 import { formatBytes } from "@/lib/utils";

@@ -3,7 +3,7 @@ import { ChevronDown, Trash2, Undo2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/primitives";
+import { Card } from "@/components/ui/card";
 import { api } from "@/lib/api/client";
 import { keys, useTrash } from "@/lib/api/queries";
 import { cn, relativeTime } from "@/lib/utils";

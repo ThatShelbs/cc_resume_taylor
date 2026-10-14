@@ -7,7 +7,7 @@ import type { Bullet, ExperienceEntry, ResumeResult } from "@/lib/api/types";
 import { uid } from "@/lib/utils";
 
 export type EditableBullet = Bullet & { _key: string };
-export type EditableEntry = Omit<ExperienceEntry, "bullets"> & { bullets: EditableBullet[] };
+type EditableEntry = Omit<ExperienceEntry, "bullets"> & { bullets: EditableBullet[] };
 export type Draft = Omit<ResumeResult, "experience"> & { experience: EditableEntry[] };
 
 export function toDraft(result: ResumeResult): Draft {
@@ -38,3 +38,6 @@ export function newBullet(): EditableBullet {
 export function fingerprint(draft: Draft | null): string {
   return draft ? JSON.stringify(fromDraft(draft)) : "";
 }
+
+/** How editor components report a change to the draft. */
+export type Update = (fn: (d: Draft) => Draft) => void;

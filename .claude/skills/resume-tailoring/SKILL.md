@@ -1,6 +1,6 @@
 ---
 name: resume-tailoring
-description: Methodology and rules for tailoring a candidate's real career history to ONE specific job posting without fabrication. Use when generating, rewriting, or reviewing a tailored resume from a source profile, a prior resume, and a target job posting (the resume_input/ files in this project). generate_resume.py loads this file's body verbatim as the tailoring system prompt, so it is the single source of truth for how tailoring is done.
+description: Methodology and rules for tailoring a candidate's real career history to ONE specific job posting without fabrication. Use when generating, rewriting, or reviewing a tailored resume from a source profile, a prior resume, and a target job posting (the workspace/input/ files in this project). The resume pipeline loads this file's body verbatim as the tailoring system prompt, so it is the single source of truth for how tailoring is done.
 ---
 
 # Resume tailoring
@@ -73,7 +73,7 @@ screening call; never use T4.
   treat every entry on it as T4. Anything matching it causes the whole resume to be
   rejected.
 
-When a FACT BANK (`resume_input/fact_bank.yaml`) is supplied, it is the authoritative
+When a FACT BANK (`workspace/input/fact_bank.yaml`) is supplied, it is the authoritative
 list of true facts, each tagged with its employer. Build every experience bullet from
 fact bank entries, cite their ids, and cite only facts belonging to that bullet's
 employer (or `general`). Facts marked `unassigned` may shape the summary but never an
@@ -151,7 +151,7 @@ that framing is honestly supported by the source material.
 
 ## Evidence-based practices
 
-Apply these where relevant (see `resume_best_practices.md` for sources and citations):
+Apply these where relevant (see `docs/resume-best-practices.md` for sources and citations):
 
 1. Quantify impact wherever the source has a real number: dollars, percentages, counts, time.
 2. Start bullets with strong active verbs; never passive "was responsible for" phrasing.

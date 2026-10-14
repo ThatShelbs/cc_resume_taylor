@@ -60,14 +60,10 @@ export default {
         lift: "0 2px 4px hsl(var(--shadow) / 0.06), 0 12px 28px -8px hsl(var(--shadow) / 0.22)",
       },
       keyframes: {
-        "accordion-down": { from: { height: "0" }, to: { height: "var(--radix-collapsible-content-height)" } },
-        "accordion-up": { from: { height: "var(--radix-collapsible-content-height)" }, to: { height: "0" } },
         shimmer: { "100%": { transform: "translateX(100%)" } },
         "pulse-ring": { "0%": { transform: "scale(0.9)", opacity: "0.7" }, "100%": { transform: "scale(1.6)", opacity: "0" } },
       },
       animation: {
-        "accordion-down": "accordion-down 0.2s ease-out",
-        "accordion-up": "accordion-up 0.2s ease-out",
         shimmer: "shimmer 1.6s infinite",
         "pulse-ring": "pulse-ring 1.4s cubic-bezier(0.2, 0.6, 0.4, 1) infinite",
         twinkle: "twinkle 2.8s ease-in-out infinite",

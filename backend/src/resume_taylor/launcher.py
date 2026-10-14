@@ -1,9 +1,9 @@
 """
 Start Resume Taylor and open it in your browser.
 
-    python launcher.py                       # your real data
-    python launcher.py --data-root demo_workspace
-    python launcher.py --dev                 # Vite hot reload + API (for development)
+    python -m resume_taylor                       # your real data
+    python -m resume_taylor --data-root demo_workspace
+    python -m resume_taylor --dev                 # Vite hot reload + API (for development)
 
 On Windows, double-click "Launch Resume Taylor.bat" instead: it prepares a
 private Python environment first, then runs this. The launcher builds the web
@@ -191,7 +191,7 @@ def main() -> None:
 
     say(BANNER)
     check_python()
-    from .app.storage.paths import default_data_root
+    from .api.storage.paths import default_data_root
 
     data_root = (args.data_root or default_data_root()).resolve()
     data_root.mkdir(parents=True, exist_ok=True)
@@ -220,8 +220,8 @@ def main() -> None:
 
     import uvicorn
 
-    from .app.main import create_app
-    from .app.storage.paths import Paths
+    from .api.main import create_app
+    from .api.storage.paths import Paths
 
     app = create_app(Paths(data_root), token)
     port_file(data_root).write_text(json.dumps({"port": port, "pid": os.getpid()}))

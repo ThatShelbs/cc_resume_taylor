@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api/client";
 import { useSystem } from "@/lib/api/queries";
+import { ROUTES } from "@/lib/routes";
 
 const DISMISS_KEY = "taylor-dismissed-word-banner";
 
@@ -53,7 +54,7 @@ export function HealthBanner() {
           <span className="font-medium">Not signed in to Claude yet.</span>{" "}
           <span className="text-muted-foreground">
             Run <code className="rounded bg-background/70 px-1">claude /login</code> in a terminal, or{" "}
-            <Link to="/settings" className="underline">
+            <Link to={ROUTES.settings} className="underline">
               paste an API key in Settings
             </Link>
             . You can still edit everything in the meantime.

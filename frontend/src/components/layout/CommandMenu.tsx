@@ -2,9 +2,10 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { BarChart3, Briefcase, FileUp, Laptop, Moon, Plus, Settings, ShieldCheck, Sun, UserRound } from "lucide-react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { StatusBadge } from "@/components/shared/common";
+import { StatusBadge } from "@/components/shared/status";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command";
 import { useProjects } from "@/lib/api/queries";
+import { ROUTES } from "@/lib/routes";
 import { useTheme } from "@/lib/theme";
 
 export function CommandMenu({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
@@ -42,22 +43,22 @@ export function CommandMenu({ open, onOpenChange }: { open: boolean; onOpenChang
             <CommandList>
               <CommandEmpty>No matches.</CommandEmpty>
               <CommandGroup heading="Actions">
-                <CommandItem onSelect={() => run(() => navigate("/projects/new"))}>
+                <CommandItem onSelect={() => run(() => navigate(ROUTES.newProject))}>
                   <Plus /> New project from a job posting
                 </CommandItem>
-                <CommandItem onSelect={() => run(() => navigate("/progress"))}>
+                <CommandItem onSelect={() => run(() => navigate(ROUTES.progress))}>
                   <BarChart3 /> Application progress
                 </CommandItem>
-                <CommandItem onSelect={() => run(() => navigate("/profile"))}>
+                <CommandItem onSelect={() => run(() => navigate(ROUTES.profile))}>
                   <UserRound /> Edit profile
                 </CommandItem>
-                <CommandItem onSelect={() => run(() => navigate("/resume"))}>
+                <CommandItem onSelect={() => run(() => navigate(ROUTES.resume))}>
                   <FileUp /> Upload or replace base resume
                 </CommandItem>
-                <CommandItem onSelect={() => run(() => navigate("/evidence"))}>
+                <CommandItem onSelect={() => run(() => navigate(ROUTES.evidence))}>
                   <ShieldCheck /> Fact bank and never-claim list
                 </CommandItem>
-                <CommandItem onSelect={() => run(() => navigate("/settings"))}>
+                <CommandItem onSelect={() => run(() => navigate(ROUTES.settings))}>
                   <Settings /> Settings
                 </CommandItem>
               </CommandGroup>
@@ -81,7 +82,7 @@ export function CommandMenu({ open, onOpenChange }: { open: boolean; onOpenChang
                       <CommandItem
                         key={p.id}
                         value={`${p.name} ${p.company} ${p.role} ${p.id}`}
-                        onSelect={() => run(() => navigate(`/projects/${p.id}`))}
+                        onSelect={() => run(() => navigate(ROUTES.project(p.id)))}
                       >
                         <Briefcase />
                         <span className="min-w-0 flex-1 truncate">{p.name}</span>

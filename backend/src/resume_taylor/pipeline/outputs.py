@@ -6,8 +6,9 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 
-from ..config import ARCHIVE_DIR, CREATE_DIR, EFFORT, MODEL
-from ..layout import REPO_ROOT
+from resume_taylor.config import ARCHIVE_DIR, CREATE_DIR, EFFORT, MODEL
+from resume_taylor.layout import REPO_ROOT
+
 from .render.docx_builder import build_cover_letter_docx, build_docx
 from .render.pdf import convert_to_pdf, count_pdf_pages
 from .report import write_report

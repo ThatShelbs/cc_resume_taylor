@@ -5,7 +5,7 @@ from pathlib import Path
 import docx
 from fastapi.testclient import TestClient
 
-from resume_taylor.app.main import create_app
+from resume_taylor.api.main import create_app
 from resume_taylor.layout import REPO_ROOT
 
 TESTS_DIR = Path(__file__).resolve().parent

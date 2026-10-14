@@ -1,6 +1,6 @@
 import { ChevronDown } from "lucide-react";
-import { STATUS_META, StatusBadge } from "@/components/shared/common";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/overlays";
+import { STATUS_META, StatusBadge } from "@/components/shared/status";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { Project, ProjectStatus } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 

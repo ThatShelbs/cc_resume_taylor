@@ -5,7 +5,7 @@ import re
 import sys
 from pathlib import Path
 
-from ..config import TAILORING_SKILL_PATH
+from resume_taylor.config import TAILORING_SKILL_PATH
 
 # Pipeline-specific I/O contract appended to the skill's methodology at call
 # time. Kept here (not in the skill) because it's coupled to how this script

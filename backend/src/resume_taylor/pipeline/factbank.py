@@ -7,7 +7,8 @@ from pathlib import Path
 
 import yaml
 
-from ..config import FACT_BANK_PATH
+from resume_taylor.config import FACT_BANK_PATH
+
 from .guards import warn_unsupported_numbers
 from .runtime import warn
 
@@ -22,7 +23,7 @@ def snap_employer(employer: str, companies: list) -> str | None:
 
 
 def load_fact_bank(companies: list, path: Path | None = None) -> dict | None:
-    """Load resume_input/fact_bank.yaml as {id: fact}. Returns None when absent,
+    """Load workspace/input/fact_bank.yaml as {id: fact}. Returns None when absent,
     in which case the pipeline runs without citation enforcement.
 
     Employer labels are snapped to the parsed company names. A label matching

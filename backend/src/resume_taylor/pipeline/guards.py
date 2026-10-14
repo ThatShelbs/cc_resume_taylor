@@ -6,7 +6,8 @@ import re
 import sys
 from pathlib import Path
 
-from ..config import DO_NOT_CLAIM_EXAMPLE, DO_NOT_CLAIM_PATH
+from resume_taylor.config import DO_NOT_CLAIM_EXAMPLE, DO_NOT_CLAIM_PATH
+
 from .runtime import warn
 
 YEARS_RE = re.compile(r"(\d+)\+?\s*years?\s+of\s+experience", re.IGNORECASE)

@@ -1,12 +1,17 @@
 import { BarChart3, Plus } from "lucide-react";
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { EmptyState, Monogram, OUTCOME_STAGES, PageHeader, StatusBadge } from "@/components/shared/common";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { Monogram } from "@/components/shared/Monogram";
+import { PageHeader } from "@/components/shared/PageHeader";
+import { OUTCOME_STAGES, StatusBadge } from "@/components/shared/status";
 import { Button } from "@/components/ui/button";
-import { Card, Skeleton } from "@/components/ui/primitives";
-import { buildFunnel, furthestStage, trackedProjects } from "@/features/progress/funnel";
+import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useProjects } from "@/lib/api/queries";
+import { ROUTES } from "@/lib/routes";
 import { cn } from "@/lib/utils";
+import { buildFunnel, furthestStage, trackedProjects } from "./funnel";
 
 const pct = (v: number) => `${Math.round(v * 100)}%`;
 
@@ -38,7 +43,7 @@ export default function ProgressPage() {
           description="Create a project, then record its outcome (applied, screen, more rounds, offer) from the project card or its Tracking tab."
           action={
             <Button asChild variant="gradient">
-              <Link to="/projects/new">
+              <Link to={ROUTES.newProject}>
                 <Plus /> New project
               </Link>
             </Button>
@@ -91,7 +96,7 @@ export default function ProgressPage() {
                   const date = p.outcome_dates?.[stage.key];
                   return (
                     <li key={p.id}>
-                      <Link to={`/projects/${p.id}`} className="flex items-center gap-3 py-2.5 hover:bg-secondary/50 sm:-mx-2 sm:px-2 sm:rounded-md">
+                      <Link to={ROUTES.project(p.id)} className="flex items-center gap-3 py-2.5 hover:bg-secondary/50 sm:-mx-2 sm:px-2 sm:rounded-md">
                         <Monogram text={p.company || p.name} className="size-8 text-xs" />
                         <div className="min-w-0 flex-1">
                           <div className="truncate text-sm font-medium">{p.role || p.name}</div>

@@ -3,19 +3,17 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Download, FileUp, Save, UserRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Callout, PageHeader } from "@/components/shared/common";
+import { Callout } from "@/components/shared/Callout";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/primitives";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ProfileEditor } from "@/features/profile/components/ProfileEditor";
 import { api, withToken } from "@/lib/api/client";
 import { keys, useProfile } from "@/lib/api/queries";
 import type { Profile, ProfilePayload } from "@/lib/api/types";
 import { relativeTime, uid } from "@/lib/utils";
-import { ProfileEditor } from "./ProfileEditor";
+import { cleanProfile } from "./cleanProfile";
 
-/** Drop blank items so they don't count as unsaved changes or get written. */
-export function cleanProfile(p: Profile): Profile {
-  return { ...p, sections: p.sections.map((s) => ({ ...s, items: s.items.filter((i) => i.trim()) })) };
-}
 
 export default function ProfilePage() {
   const { data, isLoading } = useProfile();

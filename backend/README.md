@@ -1,22 +1,30 @@
 # Resume Taylor backend
 
-Python package `resume_taylor` (src layout). Two halves:
+Python package `resume_taylor` (src layout, `src/resume_taylor/`). Two halves that share a few small modules:
 
-- `pipeline/`: the resume pipeline. `python -m resume_taylor.pipeline --help`
-  (or the `generate_resume.py` shim at the repo root). Deterministic parsing,
-  the Claude calls, the validation guards, docx/pdf output.
-- `app/`: the FastAPI backend of the browser app (`routers/`, `services/`,
-  `storage/`). It runs the pipeline as a subprocess for every generation.
+| Folder / module | What it is |
+|---|---|
+| `pipeline/` | The tailoring engine and its command line (`python -m resume_taylor.pipeline`). Deterministic parsing, the two Claude calls, the validation guards, `.docx`/`.pdf` output. Knows nothing about the web. |
+| `api/` | The FastAPI backend of the web app. `main.py` wires it together; `routers/` is the HTTP API (one module per area), `services/` is what routes call (background jobs, the pipeline runner, live checks, sample data), `storage/` reads and writes files on disk. It runs the pipeline as a subprocess for every generation. |
+| `layout.py` | Where the repo's folders are (stdlib only, so the launcher can use it before packages are installed). |
+| `config.py` | Settings from the environment and `.env`, plus the command-line workflow's default folders (`workspace/`). |
+| `claude_cli.py` | Running the `claude` CLI as a text-generation step; used by both halves. |
+| `launcher.py` | Starts the server and opens the browser (`python -m resume_taylor`). |
+| `sample_data/` | The fictional demo applicant. |
+| `resources/` | The starter never-claim list. |
 
-Shared modules: `layout.py` (folder locations, stdlib only), `config.py`
-(environment and default files), `claude_cli.py` (running the `claude` CLI),
-`launcher.py` (starts the app), `sample_data/` (the fictional demo applicant),
-`resources/` (the starter never-claim list).
+Dependencies flow one way: `api` imports `pipeline`, never the reverse.
+
+Console scripts (after `pip install -e backend`): `resume-taylor` (the app), `resume-taylor-generate` (the pipeline),
+`resume-taylor-facts` (draft a fact bank).
 
 ## Develop
 
-```
+```bash
 pip install -e "backend[dev]"
-python -m pytest -q         # from backend/ (or the repo root)
-ruff check backend
+cd backend && python -m pytest -q      # no test makes a Claude call
+ruff check backend                     # from the repo root
 ```
+
+`tests/pipeline/` mirrors the pipeline modules; `tests/api/` covers the HTTP API, stores and job runner.
+`tests/support.py` builds the temporary workspaces both use.

@@ -3,7 +3,7 @@ into the resume."""
 
 import re
 
-from .skills import skill_key
+from .skill_lists import skill_key
 
 
 def _contains_term(term: str, text_lower: str) -> bool:

@@ -18,7 +18,7 @@ from .guards import (
 )
 from .result import RESULT_SCHEMA, report_deny_violations
 from .runtime import stage, warn
-from .skills import merge_and_sort_skills
+from .skill_lists import merge_and_sort_skills
 from .tailoring import tailor_content
 
 

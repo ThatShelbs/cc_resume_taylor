@@ -1,17 +1,17 @@
 """
-Draft resume_input/fact_bank.yaml from the profile and prior resume.
+Draft workspace/input/fact_bank.yaml from the profile and prior resume.
 
 The fact bank is the tailoring pipeline's source of truth: one atomic, true
-fact per entry, each tagged with the employer it belongs to. generate_resume.py
+fact per entry, each tagged with the employer it belongs to. The resume pipeline
 requires every output bullet to cite fact ids from it, so no bullet can exist
 without a traceable source. This script only DRAFTS the bank with one Claude
 Code CLI call; review it by hand afterward (especially any `employer:
 unassigned` entries), then keep it as a hand-maintained file.
 
 Usage:
-    python build_fact_bank.py          # refuses to overwrite an existing bank
-    python build_fact_bank.py --force  # redraft from scratch (loses hand edits)
-    python build_fact_bank.py --profile P --resume R --out PATH
+    python -m resume_taylor.pipeline.build_fact_bank          # refuses to overwrite an existing bank
+    python -m resume_taylor.pipeline.build_fact_bank --force  # redraft from scratch (loses hand edits)
+    python -m resume_taylor.pipeline.build_fact_bank --profile P --resume R --out PATH
 """
 
 import argparse
@@ -116,10 +116,10 @@ def normalize_facts(facts: list, companies: list, source_text: str) -> list:
 
 HEADER = """\
 # Fact bank: the source of truth for tailoring. Every resume bullet must cite
-# the ids of the facts it is built from, and generate_resume.py rejects a bullet
+# the ids of the facts it is built from, and the resume pipeline rejects a bullet
 # that cites an unknown id or another employer's fact.
 #
-# Drafted by build_fact_bank.py, then maintained BY HAND:
+# Drafted by resume-taylor-facts, then maintained BY HAND:
 #   - Fix every `employer: unassigned` entry (set the real employer, or `general`).
 #     Unassigned facts can still inform the summary but never an employer's bullets.
 #   - Correct any text that drifted from what you actually did.
@@ -132,8 +132,8 @@ HEADER = """\
 def main(argv=None) -> None:
     parser = argparse.ArgumentParser(description="Draft the fact bank from the profile and prior resume.")
     parser.add_argument("--force", action="store_true", help="overwrite an existing bank (loses hand edits)")
-    parser.add_argument("--profile", type=Path, help="profile .docx (default: newest resume_input/in_profile*)")
-    parser.add_argument("--resume", type=Path, help="prior resume .docx (default: newest resume_input/in_resume*)")
+    parser.add_argument("--profile", type=Path, help="profile .docx (default: newest workspace/input/in_profile*)")
+    parser.add_argument("--resume", type=Path, help="prior resume .docx (default: newest workspace/input/in_resume*)")
     parser.add_argument("--out", type=Path, default=FACT_BANK_PATH, help="where to write the bank")
     args = parser.parse_args(argv)
     out_path = args.out

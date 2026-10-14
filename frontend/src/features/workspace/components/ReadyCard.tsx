@@ -3,13 +3,14 @@ import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { BeadBracelet, Sequins } from "@/components/shared/brand";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/primitives";
+import { Card } from "@/components/ui/card";
 import { useSystem } from "@/lib/api/queries";
 import type { Project } from "@/lib/api/types";
+import { ROUTES } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 
 /** The company's first word for the ready card's bracelet, letters only. */
-export function braceletWord(company: string | null | undefined): string {
+function braceletWord(company: string | null | undefined): string {
   const word = (company ?? "").split(/\s+/)[0]?.replace(/[^\p{L}]/gu, "") ?? "";
   return word.length >= 2 && word.length <= 9 ? word : "new job";
 }
@@ -18,13 +19,13 @@ export function ReadyCard({ project, running, disabled, onGenerate }: { project:
   const { data: system } = useSystem();
   const checks = useMemo(
     () => [
-      { ok: !!system?.inputs.resume, label: "Base resume", detail: system?.inputs.resume ?? "Needed", to: "/resume" },
-      { ok: !!system?.inputs.profile, label: "Profile", detail: system?.inputs.profile ?? "Needed", to: "/profile" },
+      { ok: !!system?.inputs.resume, label: "Base resume", detail: system?.inputs.resume ?? "Needed", to: ROUTES.resume },
+      { ok: !!system?.inputs.profile, label: "Profile", detail: system?.inputs.profile ?? "Needed", to: ROUTES.profile },
       {
         ok: !!system?.inputs.fact_bank,
         label: "Fact bank",
         detail: system?.inputs.fact_bank ? `${system.inputs.fact_bank} facts, citations enforced` : "Optional, adds provenance checks",
-        to: "/evidence",
+        to: ROUTES.evidence,
         optional: true,
       },
       { ok: true, label: "Template", detail: <span className="capitalize">{project.template}</span>, to: "" },

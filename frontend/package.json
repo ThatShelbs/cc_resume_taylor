@@ -3,7 +3,10 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Resume Taylor: local browser front end for cc_resume_creator",
+  "engines": {
+    "node": ">=20"
+  },
+  "description": "Resume Taylor: the React front end of the local web app",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -26,7 +29,6 @@
     "@radix-ui/react-dropdown-menu": "^2.1.24",
     "@radix-ui/react-hover-card": "^1.1.23",
     "@radix-ui/react-label": "^2.1.15",
-    "@radix-ui/react-popover": "^1.1.23",
     "@radix-ui/react-progress": "^1.1.16",
     "@radix-ui/react-select": "^2.3.7",
     "@radix-ui/react-separator": "^1.1.15",

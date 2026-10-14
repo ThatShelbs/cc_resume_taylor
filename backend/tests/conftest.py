@@ -4,7 +4,7 @@ import shutil
 
 import pytest
 
-from resume_taylor.app.storage.paths import Paths
+from resume_taylor.api.storage.paths import Paths
 from resume_taylor.sample_data import demo_data
 from support import DENY_FIXTURE, write_docx
 

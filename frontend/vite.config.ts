@@ -4,7 +4,7 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 // In dev (`npm run dev`), Vite serves the UI with hot reload and proxies the
-// API to the Python server started by `python launcher.py --dev`.
+// API to the Python server started by `python -m resume_taylor --dev`.
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -32,7 +32,6 @@ export default defineConfig({
             "@radix-ui/react-tabs",
             "@radix-ui/react-tooltip",
             "@radix-ui/react-select",
-            "@radix-ui/react-popover",
           ],
         },
       },

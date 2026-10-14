@@ -1,18 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./client";
-import type {
-  FactsPayload,
-  GuardrailsPayload,
-  ImportCandidate,
-  Project,
-  ProjectDetail,
-  ProfilePayload,
-  ResumePayload,
-  Settings,
-  SystemInfo,
-  TrashItem,
-  Version,
-} from "./types";
+import type { FactsPayload, GuardrailsPayload, ImportCandidate, Project, ProjectDetail, ProfilePayload, ResumePayload, Settings, SystemInfo, TrashItem, Version } from "./types";
 
 export const keys = {
   system: ["system"] as const,

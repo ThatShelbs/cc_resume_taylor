@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { progressPercent, stepStates, stepsFor } from "@/features/jobs/stages";
 import type { JobSummary } from "@/lib/api/types";
+import { progressPercent, stepStates, stepsFor } from "./stages";
 
 const job = (patch: Partial<JobSummary>): JobSummary => ({
   id: "j1",

@@ -1,4 +1,4 @@
-"""Plain-English health check for Resume Taylor (run by Doctor.bat).
+"""Plain-English health check for Resume Taylor (run by scripts/windows/Doctor.bat).
 
 Prints what is installed and what is missing, with your user name and folders
 hidden, so the output is safe to paste into a bug report.
@@ -71,7 +71,7 @@ def main() -> int:
     except ImportError:
         pass
 
-    from resume_taylor.app.storage.paths import default_data_root
+    from resume_taylor.api.storage.paths import default_data_root
 
     data_root = default_data_root()
     saved_key = (data_root / "secrets.json").exists()
