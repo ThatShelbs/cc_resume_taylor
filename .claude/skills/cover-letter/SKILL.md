@@ -43,6 +43,8 @@ The truthfulness rules and claim tiers of the `resume-tailoring` skill
 - No em dashes. Use a period, comma, semicolon, or parentheses.
 - First person, active voice, plain words. No clichés ("passionate," "synergy,"
   "results-driven," "hit the ground running").
+- Sound like one specific person writing to one team. Vary sentence length, skip stacked
+  triads and "not just X but Y," and do not open with scene-setting about the industry.
 
 ## Citations and output
 

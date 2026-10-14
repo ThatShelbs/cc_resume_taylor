@@ -6,7 +6,7 @@ import re
 from .skill_lists import skill_key
 
 
-def _contains_term(term: str, text_lower: str) -> bool:
+def contains_term(term: str, text_lower: str) -> bool:
     return re.search(rf"(?<!\w){re.escape(term)}(?!\w)", text_lower) is not None
 
 
@@ -32,7 +32,7 @@ def keyword_coverage(
     job_lower, out_lower = job_text.lower(), output_text.lower()
     covered, missing = [], []
     for key, term in sorted(vocab.items()):
-        if not _contains_term(key, job_lower):
+        if not contains_term(key, job_lower):
             continue
-        (covered if _contains_term(key, out_lower) else missing).append(term)
+        (covered if contains_term(key, out_lower) else missing).append(term)
     return covered, missing

@@ -17,6 +17,7 @@ def write_report(
     draft: str,
     cover_letter: list | None = None,
     page_count: int | None = None,
+    requirements: list | None = None,
 ) -> None:
     """Markdown audit trail for one run: what went in, every advisory warning,
     keyword coverage, each final bullet with the facts it cites, and the raw
@@ -42,6 +43,7 @@ def write_report(
         f"- Covered: {', '.join(covered) or 'none'}",
         f"- Missing: {', '.join(missing) or 'none'}",
         "",
+        *_requirement_lines(requirements),
         "## Bullets and provenance",
         "",
     ]
@@ -69,3 +71,32 @@ def write_report(
     lines += ["## Raw draft", "", "```", draft.strip(), "```", ""]
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("\n".join(lines), encoding="utf-8")
+
+
+_STATUS_LABEL = {
+    "covered": "supported by your materials",
+    "adjacent": "related only; do not claim",
+    "gap": "NO EVIDENCE; do not claim",
+}
+
+
+def _requirement_lines(requirements: list | None) -> list:
+    """The claim audit: every posting requirement against the evidence behind it."""
+    if not requirements:
+        return []
+    lines = [
+        f"## Requirement evidence ({sum(r['status'] == 'covered' for r in requirements)}/{len(requirements)} supported)",
+        "",
+        "Each requirement the posting names, the evidence in your materials, and where the resume "
+        "uses it. Be ready to speak to every line marked used; gaps are honest gaps.",
+        "",
+        "| Requirement | Posting tier | Evidence | On resume |",
+        "|---|---|---|---|",
+    ]
+    for r in requirements:
+        evidence = _STATUS_LABEL.get(r["status"], r["status"])
+        if r.get("ids"):
+            evidence += " (" + ", ".join(r["ids"]) + ")"
+        used = ("yes: " + ", ".join(r["roles"])) if r.get("roles") else ("yes (summary/skills)" if r.get("in_output") else "no")
+        lines.append(f"| {r['term']} | {r['tier']} | {evidence} | {used} |")
+    return lines + [""]

@@ -81,6 +81,8 @@ employer's bullets.
 
 ## Tailoring (weight this heavily)
 
+- If a POSTING ANALYSIS block is supplied, treat its ranked terms as the posting's priorities;
+  only work in terms listed as supported, and never use anything listed as having no evidence.
 - Before writing anything, identify the 5-8 things this specific posting most cares about
   (its "You Will" / "You Have" priorities, its named responsibilities, its own
   vocabulary).
@@ -92,10 +94,36 @@ employer's bullets.
   posting, leading each role with its most relevant bullet.
 - Reword bullets in the posting's own vocabulary wherever that vocabulary accurately
   describes what the candidate truly did.
+- Weight by recency and relevance. The most recent and most relevant roles get the fullest
+  treatment (3-5 bullets); roles more than about 10-15 years old, or barely related to the
+  posting, get 1-2 bullets. Never drop an employer entirely.
+- Show skills in use, not just listed. Screening systems and recruiters check that a claimed
+  skill is demonstrated in the work history, so every important skill in the skills list
+  should also appear inside at least one bullet it genuinely belongs to, in the role where
+  it was actually used.
+- Where the posting uses both an acronym and its spelled-out form (e.g. SEO / Search Engine
+  Optimization) and the candidate truly has the skill, write it once as "Search Engine
+  Optimization (SEO)" so either form matches.
+
+## Bullet craft
+
+- Default shape: strong verb + what you did + how or with what tools + the result or scale,
+  when the source gives one. Treat it as a default, not a template. Not every bullet needs
+  a metric, and a bullet with no number in the source must not get one. If the source has
+  scope (team size, volume, cadence, number of stakeholders) use that instead of inventing
+  an outcome.
+- Aim for 1-2 lines per bullet (roughly 15-30 words). The first two or three bullets of a
+  role are the ones most readers see; put the most posting-relevant, best-evidenced bullet
+  first.
+- Vary how bullets open and how long they are. Do not start two bullets in a role with the
+  same verb, and avoid reusing the same verb across roles when a plain alternative exists.
 
 ## Natural terminology (avoid obvious tailoring)
 
-Describe the candidate's experience in natural, standard industry terminology, the way a
+This balances against keyword matching. Use the posting's exact term whenever it is the
+genuine, standard name for something the candidate did (a screener matches those literally,
+and semantic matchers reward them even more when they sit inside a real accomplishment).
+Otherwise use the candidate's own term; never reverse-engineer a phrase. Describe the candidate's experience in natural, standard industry terminology, the way a
 practitioner in that field would describe their own work, NOT by parroting the posting's
 specific pet phrases. Mirroring the posting's wording is good only when its term is the
 genuine, standard name for what the candidate did. When the posting uses a narrower or
@@ -112,7 +140,10 @@ phrasing reverse-engineered from their own job description, and it reads as inau
 Write the summary as a direct, confident, 2-4 sentence pitch for this exact role. Open
 with the candidate's single strongest true qualification against the posting's top
 priority, and use the posting's own framing (its title, its named priorities) wherever
-that framing is honestly supported by the source material.
+that framing is honestly supported by the source material. A good opening names what the
+candidate is (a descriptor of their real work, never a title they have not held) and their
+years in it, then the strongest proof. Skip adjectives and self-praise; specifics (scale,
+outcomes, tools in context) are what set a summary apart.
 
 ## Skills
 
@@ -140,27 +171,34 @@ that framing is honestly supported by the source material.
   this specific posting, plus a few strong bonus skills the posting does not ask for but
   that a recruiter would still be glad to see. This is a scannable list a recruiter skims
   in seconds, not an exhaustive inventory. Do not dump every possible skill in. Ordering
-  does not matter; a later step sorts the list alphabetically.
+  does not matter; a later step puts the skills the posting names first, then the rest
+  alphabetically.
 
-## Writing style
+## Writing style (sound like a person, not a template)
 
 - Do not use em dashes anywhere. Use a period, comma, semicolon, or parentheses instead.
   Heavy em-dash use reads as an obvious AI-writing tell.
 - Lead bullets with strong active verbs ("led," "built," "reduced"), never passive "was
   responsible for" phrasing.
+- Write plain, concrete language the way the candidate would say it. Prefer the wording
+  already in PROFILE and PRIOR RESUME when it is accurate; reuse it rather than polishing
+  it into something generic.
+- Avoid words and constructions that read as machine-written or as filler: spearheaded,
+  orchestrated, leveraged (when "used" works), seamless, robust, cutting-edge, dynamic,
+  synergy, results-driven, detail-oriented, team player, proven track record, passionate
+  about, adept at, "not just X but Y", rhetorical triads used for rhythm, and scene-setting
+  openers. Prefer "led," "built," "ran," "used."
+- Do not give every bullet the same rhythm or end each one on a metric. Mix short and
+  longer bullets; some may end on the action or the scope.
 
 ## Evidence-based practices
 
-Apply these where relevant (see `docs/resume-best-practices.md` for sources and citations):
+See `docs/resume-best-practices.md` for sources. Beyond the rules above:
 
-1. Quantify impact wherever the source has a real number: dollars, percentages, counts, time.
-2. Start bullets with strong active verbs; never passive "was responsible for" phrasing.
-3. Mirror the posting's exact terminology only for skills/title language the candidate honestly has.
-4. Lead with the single most relevant, highest-impact bullet per role; recruiters scan, they do not read linearly at first.
-5. Do not compress a 10+ year career to fit one page at the cost of cutting strong material; do not pad a short career to fill two.
-6. Cut unquantified, generic duty-description bullets in favor of fewer, sharper, evidence-backed ones.
-7. The skills section should reflect tools, platforms, languages, algorithms, and well-known project types (e.g. forecasting, clustering, MTA).
-8. The skills section is sorted alphabetically so a recruiter can scan it quickly.
+1. Quantify only with real numbers from the source: dollars, percentages, counts, time.
+2. Do not compress a 10+ year career to fit one page at the cost of cutting strong material; do not pad a short career to fill two.
+3. Cut generic duty-description bullets in favor of fewer, sharper, evidence-backed ones.
+4. The skills section reflects tools, platforms, languages, methods, and well-known project types (e.g. forecasting, clustering, MTA).
 
 ## Output discipline
 

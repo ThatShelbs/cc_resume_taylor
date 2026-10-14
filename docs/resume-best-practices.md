@@ -36,10 +36,11 @@ here.
 
 ### Content and substance
 - Quantify accomplishments (dollars, percentages, counts, time saved) wherever the
-  underlying fact supports it — the RCT on AI writing assistance found that clearer,
-  better-written resumes causally increased hire probability by ~8%, with no drop in
-  employer satisfaction, i.e. clarity and impact-legibility help employers assess real
-  ability rather than just signaling. (Ge et al., arXiv:2301.08083)
+  underlying fact supports it. The evidence here is indirect: the RCT on AI writing
+  assistance found that clearer, better-written resumes raised hire probability, with no
+  drop in employer satisfaction. It tested writing clarity, not quantification itself, so
+  treat "quantify" as sound practice, not a measured effect size. (Ge et al.,
+  arXiv:2301.08083)
 - Explaining an employment gap performs better than leaving it unaddressed.
   (ResumeGo employment gaps study)
 - Don't pad with unquantified duty-lists — the eye-tracking research found recruiters
@@ -61,8 +62,34 @@ here.
 - Tailoring the application to the specific role (not just the resume, but supporting
   materials like a cover letter) measurably raises callback rates in real submitted-
   application experiments. (ResumeGo cover letter study)
-- Mirror the posting's own terminology for skills/tools the candidate genuinely has,
-  since ATS and recruiter keyword scans match on exact phrasing, not synonyms.
+- Mirror the posting's own terminology for skills/tools the candidate genuinely has.
+  Exact phrasing still carries the most weight in keyword filters.
+
+### How screening works in 2026 (vendor and industry reports; not independent studies)
+- Major platforms (Workday, iCIMS, Greenhouse and others) layer NLP/semantic or LLM
+  matching on top of exact-match scoring, so "led cross-functional teams" can earn partial
+  credit for "team leadership." Exact terms are still safest; synonyms are a bonus.
+- Modern parsers build a candidate profile from skills, roles, and responsibilities and
+  check whether a claimed skill is demonstrated in the work history. A skill that appears
+  only in a skills list and in no bullet is weak evidence.
+- Recency and title trajectory matter. Relevant skills in the most recent roles count for
+  more than the same skills ten years back.
+- Most tools shortlist or rank; a human still makes the final call. Keyword stuffing and
+  hidden text (white-on-white, tiny fonts) are detected and penalized.
+- Write acronyms with their spelled-out form once (e.g. "Search Engine Optimization (SEO)")
+  so either form matches.
+- Sources: [Jobscan on AI detection](https://www.jobscan.co/blog/can-ats-detect-ai-resume/),
+  [AI resume screening in 2026](https://atsverification.com/blog/ai-resume-screening-2026/),
+  [How ATS systems work in 2026](https://www.atscvchecker.pro/blog/how-ats-systems-work-2026/).
+
+### Avoiding AI-writing tells
+- ATS software rarely flags AI-written text. The risk is a human recruiter noticing
+  generic, uniform prose (buzzword verbs, every bullet the same length and shape, a
+  metric tacked onto every line, em-dash-heavy sentences, rhetorical triads).
+- Fix it with specifics, the candidate's own vocabulary, varied bullet length and
+  structure, and plain verbs. The pipeline's `guards_quality.py` flags the common tells.
+- Keep the file clean too: no zero-width characters, and document properties that name
+  the candidate, not a library default.
 
 ### Structure and length
 - One page is the safer default for less than ~10 years of experience; two pages is
@@ -94,14 +121,8 @@ how ATS text-extraction actually works)
 - Standard fonts (e.g., Calibri, Arial, Times New Roman), simple bullet characters, and
   a .docx or text-extractable PDF rather than a flattened image/design-tool export.
 
-## Condensed rules for prompt injection
+## How the generator uses this
 
-The `resume-tailoring` skill (`.claude/skills/resume-tailoring/SKILL.md`) carries this shorter
-list so the per-run prompt stays compact:
-
-1. Quantify impact wherever the source material has a real number — dollars, %, counts, time.
-2. Start bullets with strong active verbs; never passive "was responsible for" phrasing.
-3. Mirror the job posting's exact terminology for skills/title language the candidate honestly has.
-4. Lead with the single most relevant, highest-impact bullet per role — recruiters scan, they don't read linearly at first.
-5. Don't compress a 10+ year career to fit one page at the cost of cutting strong material; don't pad a short career to fill two.
-6. Cut unquantified, generic duty-description bullets in favor of fewer, sharper, evidence-backed ones.
+The tailoring rules the model actually sees live in
+`.claude/skills/resume-tailoring/SKILL.md`; this file is the sourced background for them.
+Change behavior in the skill, and update this file when the evidence changes.

@@ -76,7 +76,9 @@ def test_generate_end_to_end_with_a_fake_claude(tmp_path, inputs, fake_claude_en
     result = json.loads(result_json.read_text(encoding="utf-8"))
     assert "11+ years" in result["summary"] and "—" not in result["summary"], "inflated years and em dashes are corrected"
     bullets = {j["company"]: [b["text"] for b in j["bullets"]] for j in result["experience"]}
-    assert len(bullets["Northwind Traders"]) == 6, "only the bullet citing another employer's fact is dropped"
+    # 7 drafted: one cites another employer's fact (dropped), then recency weighting caps a role at 5.
+    assert len(bullets["Northwind Traders"]) == 5
+    assert "Lead a team of 7 analysts and data scientists, partnering with marketing, finance, and product leaders." not in bullets["Northwind Traders"]
     assert "Built store-level demand forecasts that reduced stockouts 18%." not in bullets["Northwind Traders"]
     assert len(bullets["Fabrikam Health"]) == 2, "the bullet naming another employer is dropped"
     assert result["skills"][0] == "A/B Testing" and "Rust" in result["skills"], "skills come from the draft, not the JSON"
@@ -89,6 +91,10 @@ def test_generate_end_to_end_with_a_fake_claude(tmp_path, inputs, fake_claude_en
     assert [n.rsplit(".", 1)[-1] for n in names] == ["docx", "docx", "md"]
     report = next(out.glob("*_report.md")).read_text(encoding="utf-8")
     assert "## Bullets and provenance" in report and "## Cover letter" in report
+    assert "## Requirement evidence" in report and "| Kubernetes | must | NO EVIDENCE; do not claim | no |" in report
+    audit = {r["term"]: r for r in result["requirements"]}
+    assert audit["Kubernetes"]["status"] == "gap" and audit["Marketing Mix Modeling"]["in_output"]
+    assert {g["label"] for g in result["skill_groups"]} >= {"Measurement", "Leadership", "Tools"}
 
     # A second run archives the first one's .docx and report.
     again = run_cli(args, fake_claude_env)
@@ -175,3 +181,26 @@ def test_generator_env_keeps_only_the_api_key(monkeypatch):
     assert env.get("ANTHROPIC_API_KEY") == key
     assert "ANTHROPIC_BASE_URL" not in env and "CLAUDE_CODE_FOO" not in env
 
+
+
+def test_a_redraft_runs_once_when_supported_terms_are_missing(tmp_path, inputs, fake_claude_env):
+    result_json = tmp_path / "result.json"
+    proc = run_cli(
+        [*inputs, "--out-dir", tmp_path / "out", "--archive-dir", tmp_path / "arch", "--result-json", result_json, "--no-pdf"],
+        {**fake_claude_env, "FAKE_CLAUDE_MODE": "redraft"},
+    )
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert "redrafting once" in proc.stdout
+    skills = json.loads(result_json.read_text(encoding="utf-8"))["skills"]
+    assert "Customer Segmentation" in skills and "Churn Modeling" in skills
+
+
+def test_no_analysis_flag_skips_the_extra_calls(tmp_path, inputs, fake_claude_env):
+    result_json = tmp_path / "result.json"
+    proc = run_cli(
+        [*inputs, "--out-dir", tmp_path / "out", "--archive-dir", tmp_path / "arch", "--result-json", result_json, "--no-pdf", "--no-analysis"],
+        fake_claude_env,
+    )
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert "Reading the posting" not in proc.stdout
+    assert json.loads(result_json.read_text(encoding="utf-8"))["requirements"] == []

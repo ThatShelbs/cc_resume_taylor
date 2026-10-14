@@ -15,6 +15,7 @@ from .guards import (
     warn_unverified_skills,
 )
 from .runtime import PROGRESS_MARKERS, WARNINGS, warn
+from .skill_lists import consistent_skill_groups
 
 RESULT_SCHEMA = 1
 
@@ -43,6 +44,7 @@ def result_to_docx_data(result: dict) -> dict:
             for job in result["experience"]
         ],
         "skills": result.get("skills") or [],
+        "skill_groups": consistent_skill_groups(result.get("skill_groups"), result.get("skills") or []),
     }
 
 
