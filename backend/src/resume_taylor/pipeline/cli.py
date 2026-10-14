@@ -78,6 +78,16 @@ def parse_args(argv=None) -> argparse.Namespace:
         type=Path,
         help="skip generation: re-validate and render a saved result JSON (no Claude call)",
     )
+    parser.add_argument(
+        "--no-analysis",
+        action="store_true",
+        help="skip the posting-analysis call and the one-time redraft; draft from the raw posting only",
+    )
+    parser.add_argument(
+        "--voice-pass",
+        action="store_true",
+        help="rewrite bullets that use generic phrasing in your own wording (one extra Claude call)",
+    )
     parser.add_argument("--no-pdf", action="store_true", help="skip the Word-based PDF export")
     parser.add_argument(
         "--dry-run",
@@ -187,6 +197,7 @@ def main(argv=None) -> None:
             ctx["fact_bank"],
             result.get("draft", ""),
             cover_letter=[(p["text"], p["ids"]) for p in result.get("cover_letter") or []] or None,
+            requirements=result.get("requirements"),
         )
     else:
         report_path = write_outputs(

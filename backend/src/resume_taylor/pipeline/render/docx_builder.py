@@ -71,8 +71,15 @@ def _build_styles(d: docx.Document, spec: TemplateSpec) -> dict:
     contact_style.paragraph_format.alignment = align
     contact_style.paragraph_format.space_after = Pt(spec.contact_space_after)
 
-    section_style = styles.add_style("ResumeSection", WD_STYLE_TYPE.PARAGRAPH)
+    # A real Word heading (restyled to look like the template) so parsers and screen
+    # readers can find the sections; theme font attributes are cleared so the template font wins.
+    section_style = styles["Heading 1"]
     section_style.base_style = normal
+    section_style.font.name = spec.font
+    rfonts = section_style.element.rPr.rFonts
+    for attr in ("asciiTheme", "hAnsiTheme", "eastAsiaTheme", "cstheme"):
+        rfonts.attrib.pop(qn(f"w:{attr}"), None)
+    section_style.font.italic = False
     section_style.font.size = Pt(spec.section_size)
     section_style.font.bold = True
     section_style.font.color.rgb = spec.ink
@@ -130,7 +137,14 @@ def _new_document(data: dict, spec: TemplateSpec | None = None) -> tuple:
 
     styles = _build_styles(d, spec)
 
-    d.add_paragraph(f"{data['first_name']} {data['last_name']}", style="ResumeName")
+    # python-docx's default properties would otherwise ship as author "python-docx".
+    full_name = f"{data['first_name']} {data['last_name']}".strip()
+    props = d.core_properties
+    props.author = props.last_modified_by = full_name
+    props.title = f"{full_name} - Resume"
+    props.comments = props.subject = props.keywords = ""
+
+    d.add_paragraph(full_name, style="ResumeName")
     contact_p = d.add_paragraph(style="ResumeContact")
     linkedin = data.get("linkedin", "")
     parts = [
@@ -155,6 +169,7 @@ def _new_document(data: dict, spec: TemplateSpec | None = None) -> tuple:
 
 def build_cover_letter_docx(data: dict, paragraphs: list, out_path: Path, template: str | None = None) -> None:
     d, _styles = _new_document(data, get_template(template))
+    d.core_properties.title = f"{data['first_name']} {data['last_name']} - Cover Letter".strip()
     d.add_paragraph(datetime.now().strftime("%B %d, %Y").replace(" 0", " "))
     d.add_paragraph("Dear Hiring Team,")
     for text in paragraphs:
@@ -210,7 +225,14 @@ def build_docx(data: dict, out_path: Path, template: str | None = None) -> None:
 
     if data.get("skills"):
         add_heading("Skills")
-        d.add_paragraph(spec.skills_separator.join(data["skills"]))
+        if data.get("skill_groups"):
+            for group in data["skill_groups"]:
+                p = d.add_paragraph()
+                p.add_run(f"{group['label']}: ").bold = True
+                p.add_run(spec.skills_separator.join(group["skills"]))
+                p.paragraph_format.space_after = Pt(1)
+        else:
+            d.add_paragraph(spec.skills_separator.join(data["skills"]))
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     d.save(str(out_path))
