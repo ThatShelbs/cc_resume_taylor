@@ -1,5 +1,5 @@
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { Briefcase, FileUp, Laptop, Moon, Plus, Settings, ShieldCheck, Sun, UserRound } from "lucide-react";
+import { BarChart3, Briefcase, FileUp, Laptop, Moon, Plus, Settings, ShieldCheck, Sun, UserRound } from "lucide-react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { StatusBadge } from "@/components/shared/common";
@@ -44,6 +44,9 @@ export function CommandMenu({ open, onOpenChange }: { open: boolean; onOpenChang
               <CommandGroup heading="Actions">
                 <CommandItem onSelect={() => run(() => navigate("/projects/new"))}>
                   <Plus /> New project from a job posting
+                </CommandItem>
+                <CommandItem onSelect={() => run(() => navigate("/progress"))}>
+                  <BarChart3 /> Application progress
                 </CommandItem>
                 <CommandItem onSelect={() => run(() => navigate("/profile"))}>
                   <UserRound /> Edit profile

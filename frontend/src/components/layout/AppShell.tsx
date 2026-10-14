@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  BarChart3,
   Briefcase,
   FileText,
   Menu,
@@ -130,6 +131,7 @@ export function AppShell() {
         <span className="rounded-full bg-secondary px-1.5 text-[11px] tabular-nums text-muted-foreground">{projects.length}</span>
       ) : undefined,
     },
+    { to: "/progress", label: "Progress", icon: BarChart3 },
     { to: "/profile", label: "Profile", icon: UserRound, badge: system && !system.inputs.profile ? <Dot /> : undefined },
     { to: "/resume", label: "Base resume", icon: FileText, badge: system && !system.inputs.resume ? <Dot /> : undefined },
     { to: "/evidence", label: "Evidence", icon: ShieldCheck },

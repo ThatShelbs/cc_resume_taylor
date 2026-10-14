@@ -4,7 +4,7 @@ import { ArrowRight, Copy, Loader2, MoreHorizontal, RefreshCcw, Trash2 } from "l
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Monogram, STATUS_META, StatusBadge } from "@/components/shared/common";
+import { Monogram, OUTCOME_STAGES, OutcomeBadge, STATUS_META, StatusBadge } from "@/components/shared/common";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogContent, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger, Tooltip } from "@/components/ui/overlays";
 import { Badge, Card } from "@/components/ui/primitives";
@@ -21,6 +21,11 @@ export function ProjectCard({ project: p }: { project: Project }) {
 
   const setStatus = useMutation({
     mutationFn: (status: ProjectStatus) => api.patch(`/api/projects/${p.id}`, { status }),
+    onSuccess: refresh,
+    onError: (e) => toast.error((e as Error).message),
+  });
+  const setOutcome = useMutation({
+    mutationFn: (outcome_stage: number) => api.patch(`/api/projects/${p.id}`, { outcome_stage }),
     onSuccess: refresh,
     onError: (e) => toast.error((e as Error).message),
   });
@@ -86,6 +91,16 @@ export function ProjectCard({ project: p }: { project: Project }) {
                   ))}
                 </DropdownMenuRadioGroup>
                 <DropdownMenuSeparator />
+                <DropdownMenuLabel>Outcome</DropdownMenuLabel>
+                <DropdownMenuRadioGroup value={String(p.outcome_stage ?? 0)} onValueChange={(v) => setOutcome.mutate(Number(v))}>
+                  {OUTCOME_STAGES.map((s, i) => (
+                    <DropdownMenuRadioItem key={s.key} value={String(i)}>
+                      <span className={cn("size-2 rounded-full", s.dot)} />
+                      {i}. {s.label}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onSelect={() => duplicate.mutate()}>
                   <Copy /> Duplicate
                 </DropdownMenuItem>
@@ -99,6 +114,7 @@ export function ProjectCard({ project: p }: { project: Project }) {
 
         <div className="mt-4 flex flex-wrap items-center gap-1.5">
           <StatusBadge status={p.status} />
+          {p.outcome_stage > 0 && <OutcomeBadge stage={p.outcome_stage} />}
           <Badge variant="outline" className="capitalize">
             {p.template}
           </Badge>

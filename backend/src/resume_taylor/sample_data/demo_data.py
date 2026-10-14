@@ -96,6 +96,7 @@ JOBS = {
         "company": "Lumen Outdoor Co.",
         "role": "Head of Marketing Analytics",
         "status": "interviewing",
+        "outcome_stage": 2,
         "text": """Head of Marketing Analytics
 Lumen Outdoor Co. | Denver, CO (Hybrid)
 
@@ -123,6 +124,7 @@ What you bring
         "company": "Tailspin Toys",
         "role": "Director, Customer Insights",
         "status": "applied",
+        "outcome_stage": 1,
         "text": """Director, Customer Insights (Tailspin Toys)
 
 Tailspin Toys is looking for a Director of Customer Insights to lead segmentation, retention, and forecasting work across our

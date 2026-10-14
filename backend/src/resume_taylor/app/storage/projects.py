@@ -28,6 +28,10 @@ from resume_taylor.pipeline.result import save_result
 from .fs import long_path, remove_tree
 
 STATUSES = ["draft", "applied", "interviewing", "offer", "rejected", "archived"]
+OUTCOME_STAGES = ["generated", "applied", "initial_screen", "additional_rounds", "offer"]
+# Lifecycle status implied by an outcome stage (only applied while the status is still open).
+OUTCOME_STATUS = {1: "applied", 2: "interviewing", 3: "interviewing", 4: "offer"}
+OPEN_STATUSES = {"draft", "applied", "interviewing"}
 ID_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{0,120}$")
 
 
@@ -50,6 +54,8 @@ class ProjectMeta(BaseModel):
     status: str = "draft"
     notes: str = ""
     applied_on: str | None = None
+    outcome_stage: int = 0  # furthest stage reached; index into OUTCOME_STAGES
+    outcome_dates: dict[str, str] = {}  # stage key -> YYYY-MM-DD it was reached
     template: str = DEFAULT_TEMPLATE
     cover_letter: bool = False
     created_at: str
@@ -61,7 +67,7 @@ class ProjectMeta(BaseModel):
     imported_from: str | None = None
 
 
-EDITABLE_FIELDS = {"name", "company", "role", "url", "status", "notes", "applied_on", "template", "cover_letter"}
+EDITABLE_FIELDS = {"name", "company", "role", "url", "status", "notes", "applied_on", "outcome_stage", "template", "cover_letter"}
 
 
 class ProjectError(ValueError):
@@ -217,11 +223,31 @@ class ProjectStore:
                 raise ProjectError(f"Unknown template '{value}'.")
             if key == "name" and not str(value).strip():
                 raise ProjectError("A project needs a name.")
+            if key == "outcome_stage" and (not isinstance(value, int) or isinstance(value, bool)
+                                           or not 0 <= value < len(OUTCOME_STAGES)):
+                raise ProjectError("Unknown outcome stage.")
             data[key] = value.strip() if isinstance(value, str) else value
+        if "outcome_stage" in patch and patch["outcome_stage"] is not None:
+            self._apply_outcome(data, patch)
         data["updated_at"] = now()
         meta = ProjectMeta(**data)
         self._write_meta(meta)
         return meta
+
+    @staticmethod
+    def _apply_outcome(data: dict, patch: dict) -> None:
+        """Keep dates, applied_on and status consistent with a new outcome stage."""
+        stage = data["outcome_stage"]
+        today = f"{datetime.now():%Y-%m-%d}"
+        dates = {k: v for k, v in (data.get("outcome_dates") or {}).items()
+                 if k in OUTCOME_STAGES and OUTCOME_STAGES.index(k) <= stage}
+        if stage > 0:
+            dates.setdefault(OUTCOME_STAGES[stage], today)
+        data["outcome_dates"] = dates
+        if stage >= 1 and not data.get("applied_on"):
+            data["applied_on"] = dates.get("applied") or today
+        if "status" not in patch and data["status"] in OPEN_STATUSES and stage in OUTCOME_STATUS:
+            data["status"] = OUTCOME_STATUS[stage]
 
     def touch(self, pid: str, **fields) -> ProjectMeta:
         meta = self.get(pid)

@@ -11,6 +11,7 @@ import { useTheme } from "./lib/theme";
 // The workspace pulls in the PDF viewer (pdf.js), so it loads on demand.
 const WorkspacePage = lazy(() => import("./features/workspace/WorkspacePage"));
 const NewProjectPage = lazy(() => import("./features/projects/NewProjectPage"));
+const ProgressPage = lazy(() => import("./features/progress/ProgressPage"));
 const ProfilePage = lazy(() => import("./features/profile/ProfilePage"));
 const ResumePage = lazy(() => import("./features/resume/ResumePage"));
 const EvidencePage = lazy(() => import("./features/evidence/EvidencePage"));
@@ -44,6 +45,7 @@ export function App() {
               <Route index element={<ProjectsPage />} />
               <Route path="projects/new" element={<NewProjectPage />} />
               <Route path="projects/:id" element={<WorkspacePage />} />
+              <Route path="progress" element={<ProgressPage />} />
               <Route path="profile" element={<ProfilePage />} />
               <Route path="resume" element={<ResumePage />} />
               <Route path="evidence" element={<EvidencePage />} />

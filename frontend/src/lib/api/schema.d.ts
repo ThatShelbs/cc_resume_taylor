@@ -1091,6 +1091,8 @@ export interface components {
             notes?: string | null;
             /** Applied On */
             applied_on?: string | null;
+            /** Outcome Stage */
+            outcome_stage?: number | null;
             /** Template */
             template?: string | null;
             /** Cover Letter */

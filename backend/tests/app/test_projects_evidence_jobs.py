@@ -62,6 +62,36 @@ def test_project_store_lifecycle(tmp_path):
     assert restored.id in [m.id for m in store.all()]
 
 
+def test_outcome_stage_tracking(tmp_path):
+    store = ProjectStore(tmp_path / "projects", tmp_path / "projects" / "_trash")
+    meta = store.create(job_text=JOB_TEXT, company="Example Co.", role="Analyst")
+    assert (meta.outcome_stage, meta.outcome_dates) == (0, {})
+
+    got = store.update(meta.id, {"outcome_stage": 2})
+    assert got.outcome_stage == 2 and got.status == "interviewing"
+    assert "initial_screen" in got.outcome_dates and got.applied_on
+
+    # Stepping back drops the later dates but keeps the earlier ones.
+    got = store.update(meta.id, {"outcome_stage": 1})
+    assert list(got.outcome_dates) == ["applied"] and got.status == "applied"
+
+    for bad in (5, -1, "2", True):
+        with pytest.raises(ProjectError):
+            store.update(meta.id, {"outcome_stage": bad})
+
+    # A closed project keeps its status; an explicit status in the same patch wins.
+    store.update(meta.id, {"status": "rejected"})
+    assert store.update(meta.id, {"outcome_stage": 3}).status == "rejected"
+    assert store.update(meta.id, {"outcome_stage": 4, "status": "archived"}).status == "archived"
+
+    # Projects saved before this field existed still load.
+    path = store.dir(meta.id) / "project.json"
+    data = json.loads(path.read_text(encoding="utf-8"))
+    del data["outcome_stage"], data["outcome_dates"]
+    path.write_text(json.dumps(data), encoding="utf-8")
+    assert store.get(meta.id).outcome_stage == 0
+
+
 def test_guess_company_role():
     assert guess_company_role(JOB_TEXT) == {"company": "Example Co.", "role": "Director, Customer Analytics"}
     assert guess_company_role("Title: Staff Analyst\nCompany: Contoso\n" + "x" * 50) == {"company": "Contoso", "role": "Staff Analyst"}
