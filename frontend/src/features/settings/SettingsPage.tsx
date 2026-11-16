@@ -135,6 +135,9 @@ export default function SettingsPage() {
           <Row title="Cover letter by default" description="New projects start with the cover letter switched on.">
             <Switch checked={form.cover_letter_default} onCheckedChange={(v) => setForm({ ...form, cover_letter_default: v })} aria-label="Cover letter by default" />
           </Row>
+          <Row title="Interview by default" description="New projects start with the short pre-generation interview switched on.">
+            <Switch checked={form.interview_default} onCheckedChange={(v) => setForm({ ...form, interview_default: v })} aria-label="Interview by default" />
+          </Row>
           <Row title="Default template" description="Used for new projects. Each project can switch anytime.">
             <TemplatePicker size="sm" value={form.default_template as TemplateKey} onChange={(t) => setForm({ ...form, default_template: t })} />
           </Row>

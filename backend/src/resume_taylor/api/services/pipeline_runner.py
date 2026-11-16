@@ -31,7 +31,7 @@ def input_hashes(paths: Paths) -> dict[str, str]:
 def pipeline_command(
     paths: Paths, *, job_text: Path, out_dir: Path, result_json: Path, template: str,
     render_json: Path | None = None, model: str | None = None, effort: str | None = None,
-    cover_letter: bool = False,
+    cover_letter: bool = False, extra_context: Path | None = None,
 ) -> list[str]:
     """Arguments (after the interpreter) for one pipeline run. With `render_json` the saved
     result is re-validated and rendered without calling Claude. Plain paths throughout
@@ -53,8 +53,11 @@ def pipeline_command(
         args += ["--effort", effort]
     if render_json:
         args += ["--render-json", str(plain_path(render_json))]
-    elif cover_letter:
-        args.append("--cover-letter")
+    else:
+        if cover_letter:
+            args.append("--cover-letter")
+        if extra_context and extra_context.exists():
+            args += ["--extra-context", str(plain_path(extra_context))]
     return args
 
 
@@ -83,6 +86,7 @@ def start_pipeline(ctx: "AppContext", pid: str, *, render: bool) -> Job:
     args = pipeline_command(
         paths, job_text=d / "job.txt", out_dir=staging, result_json=staging / "result.json", template=meta.template,
         render_json=d / "result.json" if render else None, model=s.model, effort=s.effort, cover_letter=meta.cover_letter,
+        extra_context=d / "interview_notes.txt",
     )
     kind = "render" if render else "generate"
     started = now()

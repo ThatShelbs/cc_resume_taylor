@@ -370,6 +370,64 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/projects/{pid}/interview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Interview
+         * @description The cached questions for this project, if an interview was already prepared.
+         */
+        get: operations["get_interview_api_projects__pid__interview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{pid}/interview/questions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Prepare Interview */
+        post: operations["prepare_interview_api_projects__pid__interview_questions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/projects/{pid}/interview/answers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Save Answers
+         * @description Persist the interview: answers become fact-bank entries, confirmed skills go on the profile,
+         *     and the whole transcript is saved for this project's next generation.
+         */
+        post: operations["save_answers_api_projects__pid__interview_answers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/projects": {
         parameters: {
             query?: never;
@@ -931,6 +989,51 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** InterviewAnswer */
+        InterviewAnswer: {
+            /** Question */
+            question: string;
+            /**
+             * Text
+             * @default
+             */
+            text: string;
+            /**
+             * Employer
+             * @default general
+             */
+            employer: string;
+        };
+        /** InterviewAnswers */
+        InterviewAnswers: {
+            /**
+             * Answers
+             * @default []
+             */
+            answers: components["schemas"]["InterviewAnswer"][];
+            /**
+             * Skills
+             * @default []
+             */
+            skills: components["schemas"]["InterviewSkill"][];
+        };
+        /** InterviewSkill */
+        InterviewSkill: {
+            /** Name */
+            name: string;
+            /**
+             * Kind
+             * @default hard
+             */
+            kind: string;
+            /** Status */
+            status: string;
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+        };
         /** Job */
         Job: {
             /**
@@ -1151,6 +1254,11 @@ export interface components {
              * @default false
              */
             cover_letter_default: boolean;
+            /**
+             * Interview Default
+             * @default false
+             */
+            interview_default: boolean;
         };
         /** TextBody */
         TextBody: {
@@ -1850,6 +1958,103 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["PhraseBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_interview_api_projects__pid__interview_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    prepare_interview_api_projects__pid__interview_questions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_answers_api_projects__pid__interview_answers_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InterviewAnswers"];
             };
         };
         responses: {

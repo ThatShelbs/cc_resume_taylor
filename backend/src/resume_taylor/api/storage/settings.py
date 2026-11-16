@@ -22,6 +22,7 @@ class Settings(BaseModel):
     timeout_seconds: int = Field(default=900, ge=60, le=3600)
     default_template: str = DEFAULT_TEMPLATE
     cover_letter_default: bool = False
+    interview_default: bool = False
 
     @field_validator("model")
     @classmethod

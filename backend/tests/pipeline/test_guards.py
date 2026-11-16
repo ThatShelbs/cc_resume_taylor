@@ -45,3 +45,20 @@ def test_strip_cross_employer_mentions():
     )
     assert out == {"Allstate Insurance": ["Did Y."], "Acme Corp": ["Did Z."]}
     assert len(WARNINGS) == 1
+
+
+def test_drop_unverified_skills_removes_hard_skills_and_keeps_supported_and_soft_ones(capsys):
+    from resume_taylor.pipeline.guards import drop_unverified_skills
+
+    source = "Led a team of analysts. Built Python and SQL pipelines. Presented to executives."
+    skills = ["Python", "Databricks", "PHP", "R", "Go", "Stakeholder Management", "SQL (Postgres)"]
+    kept = drop_unverified_skills(skills, source, extra_evidence="Fact: owned the roadmap")
+    assert kept == ["Python", "Stakeholder Management", "SQL (Postgres)"]
+    out = capsys.readouterr().out
+    assert "removed skill 'Databricks'" in out and "removed skill 'PHP'" in out
+
+
+def test_drop_unverified_skills_drops_soft_skills_without_any_leadership_evidence():
+    from resume_taylor.pipeline.guards import drop_unverified_skills
+
+    assert drop_unverified_skills(["Executive Influence", "SQL"], "Wrote SQL reports.") == ["SQL"]

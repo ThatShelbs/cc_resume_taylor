@@ -51,6 +51,24 @@ class DraftFactsBody(BaseModel):
     force: bool = False
 
 
+class InterviewAnswer(BaseModel):
+    question: str
+    text: str = ""
+    employer: str = "general"
+
+
+class InterviewSkill(BaseModel):
+    name: str
+    kind: str = "hard"  # hard | soft
+    status: str  # have | no
+    note: str = ""
+
+
+class InterviewAnswers(BaseModel):
+    answers: list[InterviewAnswer] = []
+    skills: list[InterviewSkill] = []
+
+
 class PhraseBody(BaseModel):
     text: str
     phrase: str

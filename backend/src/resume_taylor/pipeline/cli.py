@@ -89,6 +89,11 @@ def parse_args(argv=None) -> argparse.Namespace:
         action="store_true",
         help="rewrite bullets that use generic phrasing in your own wording (one extra Claude call)",
     )
+    parser.add_argument(
+        "--extra-context",
+        type=Path,
+        help="text file of the candidate's own notes for this application (e.g. interview answers)",
+    )
     parser.add_argument("--no-pdf", action="store_true", help="skip the Word-based PDF export")
     parser.add_argument(
         "--dry-run",

@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { AlertDialog, AlertDialogContent } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { InterviewSheet } from "@/features/interview/InterviewSheet";
 import { useJobs, useJobState } from "@/features/jobs/JobCenter";
 import { ContentEditor } from "./components/ContentEditor";
 import { HistoryPanel } from "./components/HistoryPanel";
@@ -63,6 +64,7 @@ function Workspace({ detail }: { detail: ProjectDetail }) {
   const { startJob, duplicate, remove, restoreVersion } = useProjectActions(project, resetSaved);
   const [tab, setTab] = useState("content");
   const [confirmRegen, setConfirmRegen] = useState(false);
+  const [interviewOpen, setInterviewOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   // Latest job for this project (live if it's running).
@@ -124,6 +126,7 @@ function Workspace({ detail }: { detail: ProjectDetail }) {
         generating={startJob.isPending && startJob.variables?.kind === "generate"}
         onRender={() => render()}
         onGenerate={() => (draft ? setConfirmRegen(true) : generate())}
+        onInterview={() => setInterviewOpen(true)}
         onDuplicate={() => duplicate.mutate()}
         onDelete={() => setConfirmDelete(true)}
         onOpenJob={openJob}
@@ -224,6 +227,16 @@ function Workspace({ detail }: { detail: ProjectDetail }) {
           }}
         />
       </AlertDialog>
+      <InterviewSheet
+        projectId={pid}
+        open={interviewOpen}
+        onOpenChange={setInterviewOpen}
+        onDone={async () => {
+          setInterviewOpen(false);
+          if (draft && !(await save(draft))) return;
+          generate();
+        }}
+      />
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent
           title="Move this project to the trash?"

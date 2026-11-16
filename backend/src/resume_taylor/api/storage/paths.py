@@ -75,6 +75,10 @@ class Paths:
     def fact_bank_command(self) -> list[str]:
         return ["-m", "resume_taylor.pipeline.build_fact_bank"]
 
+    @property
+    def interview_command(self) -> list[str]:
+        return ["-m", "resume_taylor.pipeline.interview"]
+
     def latest(self, prefix: str, exts: tuple = (".docx",)) -> Path | None:
         """Newest resume_input/<prefix>* by modification time, like find_latest()."""
         if not self.input_dir.exists():
