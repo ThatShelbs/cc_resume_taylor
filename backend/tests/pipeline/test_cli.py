@@ -81,10 +81,11 @@ def test_generate_end_to_end_with_a_fake_claude(tmp_path, inputs, fake_claude_en
     assert "Lead a team of 7 analysts and data scientists, partnering with marketing, finance, and product leaders." not in bullets["Northwind Traders"]
     assert "Built store-level demand forecasts that reduced stockouts 18%." not in bullets["Northwind Traders"]
     assert len(bullets["Fabrikam Health"]) == 2, "the bullet naming another employer is dropped"
-    assert result["skills"][0] == "A/B Testing" and "Rust" in result["skills"], "skills come from the draft, not the JSON"
+    assert result["skills"][0] == "A/B Testing" and "dbt" in result["skills"], "skills come from the draft, not the JSON"
+    assert "Rust" not in result["skills"], "a hard skill absent from the source is dropped"
     assert len(result["cover_letter"]) == 3
     warnings = "\n".join(result["warnings"])
-    for expected in ("$95M", "cites F006", "uncited bullet", "mentioned Northwind Traders", "comparison phrasing", "'Rust'"):
+    for expected in ("$95M", "cites F006", "uncited bullet", "mentioned Northwind Traders", "comparison phrasing", "removed skill 'Rust'"):
         assert expected in warnings
 
     names = sorted(p.name for p in out.iterdir())
