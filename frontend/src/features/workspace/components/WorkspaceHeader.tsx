@@ -1,4 +1,4 @@
-import { Copy, FileText, FolderOpen, MoreHorizontal, RefreshCcw, Sparkles, Trash2 } from "lucide-react";
+import { Copy, FileText, FolderOpen, MessageSquareQuote, MoreHorizontal, RefreshCcw, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Monogram } from "@/components/shared/Monogram";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,7 @@ export function WorkspaceHeader({
   generating,
   onRender,
   onGenerate,
+  onInterview,
   onDuplicate,
   onDelete,
   onOpenJob,
@@ -44,6 +45,7 @@ export function WorkspaceHeader({
   generating: boolean;
   onRender: () => void;
   onGenerate: () => void;
+  onInterview: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
   onOpenJob: (jobId: string) => void;
@@ -85,6 +87,13 @@ export function WorkspaceHeader({
         <Button variant={hasDraft ? "outline" : "gradient"} onClick={onGenerate} disabled={running || blockedInputs} loading={generating}>
           <Sparkles /> {hasDraft ? "Regenerate" : "Generate"}
         </Button>
+        {hasDraft && (
+          <Tooltip content="Answer a few questions about this role, then regenerate with what you share">
+            <Button variant="outline" onClick={onInterview} disabled={running || blockedInputs}>
+              <MessageSquareQuote /> Improve with interview
+            </Button>
+          </Tooltip>
+        )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" aria-label="More actions">

@@ -22,6 +22,7 @@ export function stepsFor(job: Pick<JobSummary, "kind" | "stages_seen">, opts: { 
     render: ["preparing", "validating", "rendering", "pdf"],
     fact_bank: ["preparing", "drafting", "validating"],
     ingest: ["preparing", "drafting", "validating"],
+    interview: ["preparing", "drafting", "validating"],
   };
   const keys = [...(keysByKind[job.kind] ?? ["preparing"])];
   // A stage the pipeline reported that we didn't predict (e.g. a cover

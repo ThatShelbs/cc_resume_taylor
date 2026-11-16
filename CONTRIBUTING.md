@@ -134,6 +134,7 @@ python -m resume_taylor.pipeline   # or the installed command: resume-taylor-gen
 | `--template {classic,modern,compact}` | Resume layout (default: classic) |
 | `--cover-letter` | Also write a cover letter, held to the same citation and never-claim checks |
 | `--no-analysis` | Skip the posting-analysis call and the one-time redraft (fewer Claude calls) |
+| `--extra-context FILE` | Your own notes for this application (the web app passes interview answers this way); treated as source material |
 | `--voice-pass` | Rewrite bullets that use generic phrasing in your own wording (one extra call; numbers must stay identical) |
 | `--out-dir`, `--archive-dir` | Where outputs and superseded outputs go |
 | `--result-json PATH` | Also save the structured, editable result |

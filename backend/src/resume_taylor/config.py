@@ -22,6 +22,9 @@ load_dotenv(REPO_ROOT / ".env")
 
 MODEL = os.environ.get("CLAUDE_MODEL", "sonnet")
 EFFORT = os.environ.get("CLAUDE_EFFORT", "medium")
+# The drafting call carries the judgment (what to emphasize, how to position seniority), so it
+# gets more reasoning than the cheap extraction calls unless --effort / CLAUDE_EFFORT says otherwise.
+DRAFT_EFFORT = os.environ.get("CLAUDE_DRAFT_EFFORT", "high")
 CLAUDE_TIMEOUT = int(os.environ.get("CLAUDE_TIMEOUT", "600"))  # seconds per CLI call
 
 TAILORING_SKILL_PATH = SKILLS_DIR / "resume-tailoring" / "SKILL.md"

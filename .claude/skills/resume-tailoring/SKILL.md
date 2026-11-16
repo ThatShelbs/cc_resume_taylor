@@ -64,7 +64,11 @@ screening call; never use T4.
   team priorities, a Lead Data Scientist mentoring others); "partnered with senior
   leadership" when the source shows the candidate presenting to or working with
   leaders. A T3 claim must always rest on a specific source fact; if you cannot point to
-  one, it is not T3.
+  one, it is not T3. Soft themes (influencing executives, owning a roadmap, aligning
+  cross-functional partners, setting direction) are T3 when the candidate's real work or a
+  title they held plainly involves them: write them in plain, humble words ("partnered with
+  product and engineering leaders to set priorities"), never with a named executive,
+  headcount, dollar figure, or tool the source does not give.
 - **T4, never.** Credentials, certifications, degrees, licenses, job titles the
   candidate did not hold, role identities they do not have ("full-stack engineer,"
   "UX designer"), tools or platforms absent from the source, proficiency levels that
@@ -76,8 +80,36 @@ screening call; never use T4.
 When a FACT BANK (`workspace/input/fact_bank.yaml`) is supplied, it is the authoritative
 list of true facts, each tagged with its employer. Build every experience bullet from
 fact bank entries, cite their ids, and cite only facts belonging to that bullet's
-employer (or `general`). Facts marked `unassigned` may shape the summary but never an
-employer's bullets.
+employer (or `general`). Facts marked `unassigned` are unconfirmed: do not cite them and do
+not build any bullet or the summary from them. Interview notes supplied with a run are the
+candidate's own words and count as source material.
+
+## Hard skills versus soft skills
+
+Treat the two very differently. A **hard skill** is anything a recruiter can verify in one
+question: a named tool, language, platform, framework, certification, or technical method
+(Databricks, PHP, Kubernetes, Salesforce). It appears only if the source material shows the
+candidate really used it. Never imply one through a related tool. A **soft skill** is a
+leadership or ownership theme that is spoken to with a story (influencing VPs and
+executives, cross-functional leadership, product ownership, roadmap strategy, building
+teams, change management). When the candidate's real work or held titles show it, position
+it confidently and humbly, as in the claim tiers above. When nothing shows it, leave it out.
+
+## Seniority positioning
+
+A POSTING ANALYSIS block may give the role level. For director, VP, or other senior roles,
+write for the person who owns outcomes, not the person who executes tasks:
+- The summary opens with the candidate's scope of ownership and the leadership shape of
+  their real career (functions owned, teams led, executives and cross-functional partners
+  worked with), then the strongest proof.
+- Each role's first bullet or two lead with direction-setting, prioritization, influence
+  across functions, or executive communication, wherever a cited fact or the duties of the
+  held title honestly support it. Technical detail follows as how the result was reached.
+- Product ownership and roadmap language is appropriate when the source shows the
+  candidate deciding what gets built or measured and why.
+- Skills include leadership and strategy entries, not only technical ones.
+- Do not read like an individual contributor, and do not inflate: no title, scope, or
+  number the source does not give.
 
 ## Tailoring (weight this heavily)
 

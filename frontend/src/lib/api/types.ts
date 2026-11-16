@@ -50,7 +50,7 @@ export interface DenyHit {
 
 export interface JobSummary {
   id: string;
-  kind: "generate" | "render" | "fact_bank" | "ingest";
+  kind: "generate" | "render" | "fact_bank" | "ingest" | "interview";
   label: string;
   project_id: string | null;
   status: JobStatus;

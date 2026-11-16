@@ -94,11 +94,52 @@ def warn_unsupported_numbers(text: str, label: str, source_text: str) -> None:
 
 
 def warn_unverified_skills(skills: list, source_text: str) -> None:
+    """Warn-only check, used when re-rendering a result the user may have edited by hand."""
     source_lower = source_text.lower()
     for skill in skills:
         core = re.sub(r"\s*\([^)]*\)", "", skill).strip().lower()
-        if core and core not in source_lower:
+        if core and re.search(rf"(?<!\w){re.escape(core)}(?!\w)", source_lower) is None:
             warn(f"skill '{skill}' wasn't found verbatim in the source documents, please verify.")
+
+
+SOFT_SKILL_RE = re.compile(
+    r"\b(leadership|leading|stakeholder|executive|communication|strateg\w*|influenc\w*|cross-?functional|"
+    r"ownership|mentor\w*|coaching|roadmap\w*|prioriti[sz]ation|collaborat\w*|change management|"
+    r"people management|team building|vendor management|product management|product owner\w*|"
+    r"decision.making|negotiation|planning|governance)\b",
+    re.IGNORECASE,
+)
+LEADERSHIP_MARKERS = (
+    "led ", "lead", "manag", "director", "head of", "stakehold", "partner", "roadmap", "priorit",
+    "executive", "leadership", "strateg", "mentor", "cross-func", "own",
+)
+
+
+def is_soft_skill(skill: str) -> bool:
+    return SOFT_SKILL_RE.search(skill) is not None
+
+
+def drop_unverified_skills(skills: list, source_text: str, extra_evidence: str = "") -> list:
+    """Remove skills the candidate's own material does not support, and say so.
+
+    A hard, checkable skill (a tool, language, platform, method name) must appear, as a whole
+    word or phrase, in the profile, prior resume, fact bank, or confirmed interview answers;
+    otherwise it is dropped, because a recruiter can verify it in one question. A soft skill
+    (leadership, stakeholder influence, ownership) is kept when that material shows leadership
+    or ownership work, since it can be spoken to with a story."""
+    evidence = (source_text + "\n" + extra_evidence).lower()
+    has_leadership = any(marker in evidence for marker in LEADERSHIP_MARKERS)
+    kept = []
+    for skill in skills:
+        core = re.sub(r"\s*\([^)]*\)", "", skill).strip().lower()
+        if not core:
+            continue
+        found = re.search(rf"(?<!\w){re.escape(core)}(?!\w)", evidence) is not None
+        if found or (is_soft_skill(skill) and has_leadership):
+            kept.append(skill)
+        else:
+            warn(f"removed skill '{skill}': it isn't in your profile, resume, or fact bank, so it can't be backed up.")
+    return kept
 
 
 ANALOGY_RE = re.compile(

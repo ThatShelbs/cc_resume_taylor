@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, ClipboardPaste, FileUp, Sparkles, Wand2 } from "lucide-react";
+import { ArrowLeft, ClipboardPaste, FileUp, MessageSquareQuote, Sparkles, Wand2 } from "lucide-react";
 import { useEffect, useRef, useState, type DragEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Field } from "@/components/ui/field";
 import { Input, Textarea } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { InterviewSheet } from "@/features/interview/InterviewSheet";
 import { useJobs } from "@/features/jobs/JobCenter";
 import { api } from "@/lib/api/client";
 import { keys, useSettings, useSystem } from "@/lib/api/queries";
@@ -33,12 +34,15 @@ export default function NewProjectPage() {
   const [url, setUrl] = useState("");
   const [template, setTemplate] = useState<TemplateKey | null>(null);
   const [coverLetter, setCoverLetter] = useState<boolean | null>(null);
+  const [interview, setInterview] = useState<boolean | null>(null);
+  const [interviewFor, setInterviewFor] = useState<Project | null>(null);
   const [dragging, setDragging] = useState(false);
   const touched = useRef({ company: false, role: false });
   const fileInput = useRef<HTMLInputElement>(null);
 
   const effectiveTemplate = template ?? ((settings?.default_template as TemplateKey) || "classic");
   const effectiveCover = coverLetter ?? settings?.cover_letter_default ?? false;
+  const effectiveInterview = interview ?? settings?.interview_default ?? false;
   const ready = !system?.onboarding_needed;
   const tooShort = jobText.trim().length < MIN_POSTING;
 
@@ -57,8 +61,9 @@ export default function NewProjectPage() {
     return () => window.clearTimeout(t);
   }, [jobText, tooShort]);
 
+  // "interview" saves the project first, then asks a few questions before generating.
   const create = useMutation({
-    mutationFn: (generate: boolean) =>
+    mutationFn: (mode: "generate" | "draft" | "interview") =>
       api.post<{ project: Project; job: JobSummary | null }>("/api/projects", {
         job_text: jobText,
         company,
@@ -66,10 +71,14 @@ export default function NewProjectPage() {
         url,
         template: effectiveTemplate,
         cover_letter: effectiveCover,
-        generate,
+        generate: mode === "generate",
       }),
-    onSuccess: ({ project, job }) => {
+    onSuccess: ({ project, job }, mode) => {
       qc.invalidateQueries({ queryKey: keys.projects });
+      if (mode === "interview") {
+        setInterviewFor(project);
+        return;
+      }
       if (job) {
         track(job, { title: `Tailoring for ${project.company || project.name}`, coverLetter: effectiveCover, successMessage: "Your tailored resume is ready" });
       } else {
@@ -79,6 +88,17 @@ export default function NewProjectPage() {
     },
     onError: (e) => toast.error((e as Error).message),
   });
+
+  const generateAfterInterview = async (project: Project) => {
+    try {
+      const job = await api.post<JobSummary>(`/api/projects/${project.id}/generate`);
+      qc.invalidateQueries({ queryKey: keys.projects });
+      track(job, { title: `Tailoring for ${project.company || project.name}`, coverLetter: project.cover_letter, successMessage: "Your tailored resume is ready" });
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+    navigate(ROUTES.project(project.id));
+  };
 
   const loadFile = async (file: File) => {
     try {
@@ -237,6 +257,13 @@ export default function NewProjectPage() {
                 </span>
                 <Switch checked={effectiveCover} onCheckedChange={setCoverLetter} aria-label="Also write a cover letter" />
               </label>
+              <label className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5">
+                <span>
+                  <span className="block text-sm font-medium">Interview me first</span>
+                  <span className="block text-xs text-muted-foreground">3 or 4 quick questions for a stronger match</span>
+                </span>
+                <Switch checked={effectiveInterview} onCheckedChange={setInterview} aria-label="Interview me before generating" />
+              </label>
             </CardContent>
           </Card>
 
@@ -245,12 +272,12 @@ export default function NewProjectPage() {
               variant="gradient"
               size="lg"
               disabled={tooShort || !ready}
-              loading={create.isPending && create.variables === true}
-              onClick={() => create.mutate(true)}
+              loading={create.isPending && create.variables !== "draft"}
+              onClick={() => create.mutate(effectiveInterview ? "interview" : "generate")}
             >
-              <Sparkles /> Save and generate
+              {effectiveInterview ? <MessageSquareQuote /> : <Sparkles />} {effectiveInterview ? "Interview, then generate" : "Save and generate"}
             </Button>
-            <Button variant="outline" disabled={tooShort} loading={create.isPending && create.variables === false} onClick={() => create.mutate(false)}>
+            <Button variant="outline" disabled={tooShort} loading={create.isPending && create.variables === "draft"} onClick={() => create.mutate("draft")}>
               Save as draft
             </Button>
             <p className="px-1 text-center text-xs leading-relaxed text-muted-foreground">
@@ -259,6 +286,26 @@ export default function NewProjectPage() {
           </div>
         </div>
       </div>
+
+      {interviewFor && (
+        <InterviewSheet
+          projectId={interviewFor.id}
+          open
+          onOpenChange={(o) => {
+            // Dismissing without choosing keeps the saved project as a draft.
+            if (!o) {
+              const project = interviewFor;
+              setInterviewFor(null);
+              navigate(ROUTES.project(project.id));
+            }
+          }}
+          onDone={() => {
+            const project = interviewFor;
+            setInterviewFor(null);
+            void generateAfterInterview(project);
+          }}
+        />
+      )}
 
       <div className="mt-8">
         <h2 className="text-sm font-semibold tracking-tight">Template</h2>

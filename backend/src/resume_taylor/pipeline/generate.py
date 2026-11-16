@@ -4,17 +4,19 @@ import argparse
 import sys
 from datetime import datetime
 
+from resume_taylor.config import DRAFT_EFFORT, EFFORT
+
 from .cover_letter import draft_cover_letter, validate_cover_letter
 from .coverage import keyword_coverage
 from .factbank import split_citation, validate_citations
 from .guards import (
+    drop_unverified_skills,
     find_deny_violations,
     fix_years_of_experience,
     remove_em_dashes,
     strip_cross_employer_mentions,
     warn_analogy_phrasing,
     warn_unsupported_numbers,
-    warn_unverified_skills,
 )
 from .guards_quality import (
     find_tell_bullets,
@@ -30,6 +32,7 @@ from .posting_analysis import (
     audit_requirements,
     build_requirement_map,
     missing_supported_terms,
+    positioning_missing,
     priorities_block,
 )
 from .result import RESULT_SCHEMA, report_deny_violations
@@ -51,6 +54,24 @@ def _draft_output_text(tailored: dict) -> str:
     return "\n".join([tailored["summary"], *bullets, *tailored["skills"]])
 
 
+def _leading_bullets(tailored: dict) -> list:
+    return [split_citation(bs[0])[0] for bs in tailored["bullets_by_company"].values() if bs]
+
+
+def _read_extra_context(args: argparse.Namespace) -> str:
+    """Interview answers (or any notes) the user supplied for this run, as a labeled block."""
+    path = getattr(args, "extra_context", None)
+    if not path or not path.exists():
+        return ""
+    text = path.read_text(encoding="utf-8").strip()
+    if not text:
+        return ""
+    return (
+        "CANDIDATE INTERVIEW NOTES (the candidate's own words, given for this application; true and "
+        "usable as source material, but still never add a figure or tool they did not state):\n" + text
+    )
+
+
 def generate(args: argparse.Namespace, ctx: dict) -> dict:
     """The Claude-backed half: draft, structure, and validate. Returns a result dict."""
     fact_bank = ctx["fact_bank"]
@@ -69,8 +90,12 @@ def generate(args: argparse.Namespace, ctx: dict) -> dict:
             states = [r["status"] for r in requirements]
             print(
                 f"  {len(requirements)} requirements: {states.count('covered')} supported, "
+                f"{states.count('positionable')} positionable, "
                 f"{states.count('adjacent')} related, {states.count('gap')} gaps."
             )
+    notes = _read_extra_context(args)
+    if notes:
+        extra = f"{extra}\n\n{notes}" if extra else notes
 
     def draft(extra_context: str) -> dict:
         return tailor_content(
@@ -81,14 +106,26 @@ def generate(args: argparse.Namespace, ctx: dict) -> dict:
             deny_patterns,
             fact_bank,
             model=args.model,
-            effort=args.effort,
+            effort=DRAFT_EFFORT if args.effort == EFFORT else args.effort,
             extra_context=extra_context,
         )
 
     print(f"Tailoring content with {args.model} (effort={args.effort})...")
     tailored = draft(extra)
     missing = missing_supported_terms(requirements, _draft_output_text(tailored))
-    if len(missing) >= MIN_MISSING_FOR_REDRAFT:
+    if positioning_missing(analysis, requirements, tailored["summary"], _leading_bullets(tailored)):
+        print("  First draft reads like an individual contributor for a senior role; redrafting once...")
+        revision = (
+            f"{extra}\n\nREVISION NOTE: this is a senior role and the draft shows no ownership, "
+            "leadership, or stakeholder-influence positioning. Rework the summary and each role's first "
+            "bullets to lead with that, using only cited facts and the duties of titles the candidate "
+            "held. Add no named executive, headcount, dollar figure, or tool."
+        )
+        second = draft(revision)
+        if not positioning_missing(analysis, requirements, second["summary"], _leading_bullets(second)):
+            tailored = second
+            missing = missing_supported_terms(requirements, _draft_output_text(tailored))
+    elif len(missing) >= MIN_MISSING_FOR_REDRAFT:
         print(f"  First draft left out {len(missing)} supported posting terms; redrafting once...")
         revision = (
             f"{extra}\n\nREVISION NOTE: an earlier draft left out these posting terms, which the candidate's "
@@ -134,17 +171,22 @@ def generate(args: argparse.Namespace, ctx: dict) -> dict:
 
     profile_skills = ctx["profile_skills"]
     skills = [normalize_text(s) for s in merge_and_sort_skills(tailored["skills"], profile_skills, job_text)]
+    fact_evidence = "\n".join(
+        " ".join([str(f.get("text", "")), *map(str, f.get("tags") or [])])
+        for f in (fact_bank or {}).values()
+        if f.get("employer") != "unassigned"
+    )
+    skills = drop_unverified_skills(skills, ctx["source_text"], fact_evidence + "\n" + notes)
     if analysis:
         skills = apply_acronym_pairs(skills, analysis["acronym_pairs"], job_text)
         warn_unsupported_title(summary, analysis["target_title"], ctx["source_text"])
     skill_groups = build_skill_groups(skills, tailored["draft"])
 
-    source_text = ctx["source_text"]
+    source_text = ctx["source_text"] + "\n" + notes
     warn_unsupported_numbers(summary, "the summary", source_text)
     for company, bullets in bullets_by_company.items():
         for bullet in bullets:
             warn_unsupported_numbers(bullet, f"a bullet under {company}", source_text)
-    warn_unverified_skills(skills, source_text)
 
     violations = find_deny_violations(summary, bullets_by_company, skills, deny_patterns)
     if violations:
