@@ -1,5 +1,5 @@
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { BarChart3, Briefcase, FileUp, Laptop, Moon, Plus, Settings, ShieldCheck, Sun, UserRound } from "lucide-react";
+import { BarChart3, Briefcase, FileUp, Laptop, Moon, Plus, Radar, Settings, ShieldCheck, Sun, UserRound } from "lucide-react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { StatusBadge } from "@/components/shared/status";
@@ -45,6 +45,12 @@ export function CommandMenu({ open, onOpenChange }: { open: boolean; onOpenChang
               <CommandGroup heading="Actions">
                 <CommandItem onSelect={() => run(() => navigate(ROUTES.newProject))}>
                   <Plus /> New project from a job posting
+                </CommandItem>
+                <CommandItem onSelect={() => run(() => navigate(ROUTES.jobSearch))}>
+                  <Radar /> Find jobs to apply to
+                </CommandItem>
+                <CommandItem onSelect={() => run(() => navigate(ROUTES.jobSearchPipeline))}>
+                  <Briefcase /> Job pipeline board
                 </CommandItem>
                 <CommandItem onSelect={() => run(() => navigate(ROUTES.progress))}>
                   <BarChart3 /> Application progress

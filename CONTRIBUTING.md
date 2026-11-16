@@ -146,3 +146,16 @@ Optional inputs: `workspace/input/fact_bank.yaml` (draft it with
 `resume-taylor-facts`, then edit by hand or in the app) and `do_not_claim.txt` in the repo
 root (one case-insensitive regex per line). Optional `.env` settings: `CLAUDE_MODEL`,
 `CLAUDE_EFFORT`, `CLAUDE_TIMEOUT`.
+
+## Job search (command line)
+
+The app runs these as jobs; they also work by hand. All take `--model` and `--effort`, and all inputs are optional so they work before a resume exists.
+
+```
+python -m resume_taylor.search --out report.json --prefs preferences.json --targets targets.json     --routes company_routes.json --count 5 --depth standard --sources targets,ideated,boards
+python -m resume_taylor.search.suggest --out companies.json --count 30     # ideate target companies
+python -m resume_taylor.search.discover --targets targets.json --routes company_routes.json
+python scripts/build_places.py     # optional: extend the distance rule to every US place (downloads a Census file)
+```
+
+Tests never touch the network or Claude: connectors run against `httpx.MockTransport`, and the engine's Claude calls are stubbed (see `backend/tests/search/`).

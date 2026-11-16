@@ -57,6 +57,7 @@ class ProjectMeta(BaseModel):
     outcome_dates: dict[str, str] = {}  # stage key -> YYYY-MM-DD it was reached
     template: str = DEFAULT_TEMPLATE
     cover_letter: bool = False
+    posting_id: str = ""  # the job-search posting this project was started from
     created_at: str
     updated_at: str
     result_saved_at: str | None = None

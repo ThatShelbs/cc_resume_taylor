@@ -60,6 +60,7 @@ class Job:
         self.kind = kind
         self.label = label
         self.project_id = project_id
+        self.lane = "main"
         self.status = "queued"  # queued | running | succeeded | failed | cancelled
         # How the subprocess ended. `status` only takes this value after the
         # success/finish callbacks have run, so a client that sees a finished
@@ -105,13 +106,17 @@ class Job:
         }
 
 
+LANES = ("main", "search")
+
+
 class JobManager:
     def __init__(self):
         self._jobs: "OrderedDict[str, Job]" = OrderedDict()
-        self._queue: "queue.Queue[tuple]" = queue.Queue()
+        self._queues: "dict[str, queue.Queue[tuple]]" = {}
         self._lock = threading.Lock()
-        self._worker = threading.Thread(target=self._loop, name="taylor-jobs", daemon=True)
-        self._worker.start()
+        for lane in LANES:
+            self._queues[lane] = queue.Queue()
+            threading.Thread(target=self._loop, args=(self._queues[lane],), name=f"taylor-jobs-{lane}", daemon=True).start()
 
     # -- public ----------------------------------------------------------------
 
@@ -127,8 +132,15 @@ class JobManager:
         env: dict | None = None,
         on_success: Callable[[Job], None] | None = None,
         on_finish: Callable[[Job], None] | None = None,
+        lane: str = "main",
     ) -> Job:
+        if lane not in self._queues:
+            raise ValueError(f"unknown job lane {lane!r}")
         with self._lock:
+            if lane != "main":  # one long search-style job at a time; it never blocks resume generation
+                running = next((j for j in self._jobs.values() if not j.done and j.lane == lane), None)
+                if running:
+                    raise RuntimeError(f"'{running.label}' is already running. Wait for it to finish.")
             busy = next(
                 (j for j in self._jobs.values() if not j.done and project_id and j.project_id == project_id),
                 None,
@@ -136,13 +148,14 @@ class JobManager:
             if busy:
                 raise RuntimeError(f"'{busy.label}' is already running for this project.")
             job = Job(kind, label, project_id)
+            job.lane = lane
             self._jobs[job.id] = job
             while len(self._jobs) > MAX_JOBS_KEPT:
                 oldest = next(iter(self._jobs.values()))
                 if not oldest.done:
                     break
                 self._jobs.popitem(last=False)
-        self._queue.put((job, args, timeout, log_path, env or {}, on_success, on_finish))
+        self._queues[lane].put((job, args, timeout, log_path, env or {}, on_success, on_finish))
         return job
 
     def get(self, job_id: str) -> Job | None:
@@ -168,9 +181,9 @@ class JobManager:
 
     # -- worker ------------------------------------------------------------------
 
-    def _loop(self) -> None:
+    def _loop(self, q: "queue.Queue[tuple]") -> None:
         while True:
-            job, args, timeout, log_path, extra_env, on_success, on_finish = self._queue.get()
+            job, args, timeout, log_path, extra_env, on_success, on_finish = q.get()
             try:
                 if job.cancel_requested:
                     job.outcome = "cancelled"
@@ -198,7 +211,7 @@ class JobManager:
                 if job.finished is None:
                     job.finished = time.time()
                 job.status = job.outcome
-                self._queue.task_done()
+                q.task_done()
 
     def _run(self, job: Job, args: list[str], timeout: int, log_path: Path | None, extra_env: dict) -> None:
         env = with_backend_on_path({

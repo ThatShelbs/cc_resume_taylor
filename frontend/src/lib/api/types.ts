@@ -50,7 +50,7 @@ export interface DenyHit {
 
 export interface JobSummary {
   id: string;
-  kind: "generate" | "render" | "fact_bank" | "ingest" | "interview";
+  kind: "generate" | "render" | "fact_bank" | "ingest" | "interview" | "job_search" | "job_search_suggest" | "job_search_discover";
   label: string;
   project_id: string | null;
   status: JobStatus;
@@ -76,6 +76,8 @@ export interface LastRun {
 
 export interface Project {
   id: string;
+  /** The job search posting this project was started from, if any. */
+  posting_id?: string;
   name: string;
   company: string;
   role: string;

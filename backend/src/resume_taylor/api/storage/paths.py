@@ -79,6 +79,22 @@ class Paths:
     def interview_command(self) -> list[str]:
         return ["-m", "resume_taylor.pipeline.interview"]
 
+    @property
+    def job_search_dir(self) -> Path:
+        return self.data_root / "job_search"
+
+    @property
+    def search_command(self) -> list[str]:
+        return ["-m", "resume_taylor.search"]
+
+    @property
+    def search_discover_command(self) -> list[str]:
+        return ["-m", "resume_taylor.search.discover"]
+
+    @property
+    def search_suggest_command(self) -> list[str]:
+        return ["-m", "resume_taylor.search.suggest"]
+
     def latest(self, prefix: str, exts: tuple = (".docx",)) -> Path | None:
         """Newest resume_input/<prefix>* by modification time, like find_latest()."""
         if not self.input_dir.exists():

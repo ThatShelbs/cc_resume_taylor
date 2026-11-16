@@ -1,4 +1,5 @@
 import { Copy, FileText, FolderOpen, MessageSquareQuote, MoreHorizontal, RefreshCcw, Sparkles, Trash2 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { Monogram } from "@/components/shared/Monogram";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { api } from "@/lib/api/client";
 import { usePatchProject } from "@/lib/api/queries";
 import type { FileInfo, JobSummary, Project } from "@/lib/api/types";
+import { ROUTES } from "@/lib/routes";
 import { formatDate, isMac, relativeTime } from "@/lib/utils";
 import { DownloadMenu } from "./DownloadMenu";
 import { EditableTitle } from "./EditableTitle";
@@ -62,6 +64,11 @@ export function WorkspaceHeader({
           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
             <StatusMenu project={project} onChange={(status) => patch.mutate({ status })} />
             {project.company && <span>{project.company}</span>}
+            {project.posting_id && (
+              <Link to={ROUTES.jobSearchPipeline} className="rounded-full border px-2 py-0.5 text-[11px] font-medium hover:bg-secondary">
+                From job search
+              </Link>
+            )}
             <span className="hidden sm:inline">·</span>
             <span>Created {formatDate(project.created_at)}</span>
             {project.last_generate?.ok && (

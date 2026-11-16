@@ -13,6 +13,14 @@ const STEP_LIBRARY: Record<string, StepDef> = {
   validating: { key: "validating", label: "Checking every seam", detail: "Citations, numbers, never-claim list, keyword coverage" },
   cover_letter: { key: "cover_letter", label: "Writing the cover letter", detail: "Built only from the validated resume content" },
   rendering: { key: "rendering", label: "Stitching the document", detail: "Applying your template to a Word document" },
+  ideating: { key: "ideating", label: "Sketching ideas", detail: "Thinking of companies that fit your history" },
+  discovering: { key: "discovering", label: "Finding the doors", detail: "Locating each company's careers page" },
+  sweeping: { key: "sweeping", label: "Casting a wide net", detail: "Searching job boards for leads" },
+  crosswalking: { key: "crosswalking", label: "Tracing to the source", detail: "Matching board leads to careers-page postings" },
+  filtering: { key: "filtering", label: "Sorting the bolts", detail: "Applying level, location, pay and freshness rules" },
+  scoring: { key: "scoring", label: "Checking the fit", detail: "Claude reads each posting against your real experience" },
+  verifying: { key: "verifying", label: "Pressing", detail: "Confirming each posting is still live" },
+  ranking: { key: "ranking", label: "Laying it out", detail: "Ranking by fit and freshness" },
   pdf: { key: "pdf", label: "Pressing the PDF", detail: "Microsoft Word renders the final PDF" },
 };
 
@@ -23,6 +31,9 @@ export function stepsFor(job: Pick<JobSummary, "kind" | "stages_seen">, opts: { 
     fact_bank: ["preparing", "drafting", "validating"],
     ingest: ["preparing", "drafting", "validating"],
     interview: ["preparing", "drafting", "validating"],
+    job_search: ["preparing", "ideating", "discovering", "sweeping", "crosswalking", "filtering", "scoring", "verifying", "ranking"],
+    job_search_suggest: ["preparing", "ideating"],
+    job_search_discover: ["discovering"],
   };
   const keys = [...(keysByKind[job.kind] ?? ["preparing"])];
   // A stage the pipeline reported that we didn't predict (e.g. a cover

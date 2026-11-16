@@ -80,3 +80,60 @@ class ApiKeyBody(BaseModel):
 
 class OpenFolderBody(BaseModel):
     target: str = "data"
+
+
+# -- job search ---------------------------------------------------------------------------------
+
+class SearchBody(BaseModel):
+    count: int = 5
+    depth: str | None = None
+    sources: list[str] | None = None
+    recency_days: int | None = None
+
+
+class SuggestBody(BaseModel):
+    count: int = 30
+    clusters: list[str] | None = None
+
+
+class TargetIn(BaseModel):
+    name: str
+    careers_url: str = ""
+    cluster: str = ""
+    rationale: str = ""
+
+
+class TargetsImportBody(BaseModel):
+    text: str = ""
+    items: list[TargetIn] | None = None
+
+
+class TargetPatch(BaseModel):
+    name: str | None = None
+    careers_url: str | None = None
+    notes: str | None = None
+
+
+class AcceptSuggestionsBody(BaseModel):
+    names: list[str]
+
+
+class DiscoverBody(BaseModel):
+    force: bool = False
+
+
+class PostingPatch(BaseModel):
+    stage: str | None = None
+    dismiss_reason: str | None = None
+    notes: str | None = None
+
+
+class ImportUrlBody(BaseModel):
+    url: str
+
+
+class TailorBody(BaseModel):
+    generate: bool = True
+    template: str | None = None
+    cover_letter: bool | None = None
+    skip_verify: bool = False

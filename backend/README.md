@@ -28,3 +28,5 @@ ruff check backend                     # from the repo root
 
 `tests/pipeline/` mirrors the pipeline modules; `tests/api/` covers the HTTP API, stores and job runner.
 `tests/support.py` builds the temporary workspaces both use.
+- `src/resume_taylor/search/`: the job search engine (career-page connectors, discovery, ideation, board sweep, filters, scoring). See CLAUDE.md.
+- `tests/search/`: engine tests, offline.

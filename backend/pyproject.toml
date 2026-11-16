@@ -19,12 +19,12 @@ dependencies = [
     "fastapi",
     "uvicorn[standard]",
     "python-multipart",
+    "httpx",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest",
-    "httpx",
     "pypdfium2",  # PDF -> PNG for template previews and screenshots
     "pillow",
     "playwright",  # README screenshots, brand assets
@@ -40,7 +40,7 @@ resume-taylor-facts = "resume_taylor.pipeline.build_fact_bank:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-resume_taylor = ["resources/*.txt"]
+resume_taylor = ["resources/*.txt", "resources/*.csv.gz"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

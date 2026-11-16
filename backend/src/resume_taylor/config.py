@@ -29,6 +29,9 @@ CLAUDE_TIMEOUT = int(os.environ.get("CLAUDE_TIMEOUT", "600"))  # seconds per CLI
 
 TAILORING_SKILL_PATH = SKILLS_DIR / "resume-tailoring" / "SKILL.md"
 COVER_LETTER_SKILL_PATH = SKILLS_DIR / "cover-letter" / "SKILL.md"
+COMPANY_IDEATION_SKILL_PATH = SKILLS_DIR / "company-ideation" / "SKILL.md"
+CAREER_DISCOVERY_SKILL_PATH = SKILLS_DIR / "career-page-discovery" / "SKILL.md"
+JOB_FIT_SKILL_PATH = SKILLS_DIR / "job-fit-scoring" / "SKILL.md"
 
 # Hard "never claim" list (claim tier T4 in the skill): one regex per line.
 DO_NOT_CLAIM_PATH = REPO_ROOT / "do_not_claim.txt"
