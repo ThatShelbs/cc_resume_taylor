@@ -50,7 +50,11 @@ def invoke_claude(
     user_message: str,
     model: str | None = None,
     effort: str | None = None,
+    tools: tuple[str, ...] = (),
+    timeout: int | None = None,
 ) -> str:
+    """Run one `claude -p` call. `tools` names built-in tools to allow (for example
+    ("WebSearch", "WebFetch") for the job search); the default is none, a pure text transform."""
     # Pass the system prompt via a file, not a CLI arg: the `claude` entry on
     # Windows is a .CMD shim run through cmd.exe, which caps the whole command
     # line at 8191 chars, so a long system prompt overflows it ("The command
@@ -62,14 +66,14 @@ def invoke_claude(
         sp_path = sp_file.name
 
     try:
+        tool_args = ["--tools", ",".join(tools), "--allowedTools", ",".join(tools)] if tools else ["--tools", ""]
         proc = subprocess.run(
             [
                 claude_bin,
                 "-p",
                 "--output-format",
                 "json",
-                "--tools",
-                "",
+                *tool_args,
                 "--model",
                 model or MODEL,
                 "--effort",
@@ -83,11 +87,11 @@ def invoke_claude(
             encoding="utf-8",
             env=clean_subprocess_env(),
             cwd=tempfile.gettempdir(),  # avoid CLAUDE.md auto-discovery from this repo's cwd
-            timeout=CLAUDE_TIMEOUT,
+            timeout=timeout or CLAUDE_TIMEOUT,
         )
     except subprocess.TimeoutExpired:
         sys.exit(
-            f"claude CLI did not respond within {CLAUDE_TIMEOUT}s. Re-run, or raise "
+            f"claude CLI did not respond within {timeout or CLAUDE_TIMEOUT}s. Re-run, or raise "
             "CLAUDE_TIMEOUT in .env."
         )
     finally:

@@ -1,10 +1,11 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { BarChart3, Briefcase, FileText, Menu, PanelLeftClose, PanelLeftOpen, Plus, Search, Settings, ShieldCheck, UserRound, X, type LucideIcon } from "lucide-react";
+import { BarChart3, Briefcase, FileText, Menu, Radar, PanelLeftClose, PanelLeftOpen, Plus, Search, Settings, ShieldCheck, UserRound, X, type LucideIcon } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
 import { Tooltip } from "@/components/ui/tooltip";
+import { useReadiness } from "@/features/job-search/api";
 import { useProjects, useSystem } from "@/lib/api/queries";
 import { ROUTES } from "@/lib/routes";
 import { cn, isMac } from "@/lib/utils";
@@ -104,6 +105,7 @@ export function AppShell() {
   const location = useLocation();
   const { data: projects } = useProjects();
   const { data: system } = useSystem();
+  const { data: readiness } = useReadiness();
   const running = projects?.filter((p) => p.active_job).length ?? 0;
 
   useEffect(() => setMobileOpen(false), [location.pathname]);
@@ -116,6 +118,14 @@ export function AppShell() {
       end: true,
       badge: projects?.length ? (
         <span className="rounded-full bg-secondary px-1.5 text-[11px] tabular-nums text-muted-foreground">{projects.length}</span>
+      ) : undefined,
+    },
+    {
+      to: ROUTES.jobSearch,
+      label: "Job search",
+      icon: Radar,
+      badge: readiness?.new_strong ? (
+        <span className="rounded-full bg-success/15 px-1.5 text-[11px] tabular-nums text-success" title="New strong matches">{readiness.new_strong}</span>
       ) : undefined,
     },
     { to: ROUTES.progress, label: "Progress", icon: BarChart3 },

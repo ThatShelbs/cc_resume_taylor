@@ -33,3 +33,4 @@ npm run build      # writes dist/, which is committed so users don't need Node.j
 ```
 
 After changing a Pydantic request model on the server, run `npm run gen:api`.
+- `src/features/job-search/`: Discover, Pipeline board, Companies and Preferences tabs, `TailorDialog`. Named for postings, not `jobs` (that means background tasks).

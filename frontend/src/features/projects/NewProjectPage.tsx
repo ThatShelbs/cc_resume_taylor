@@ -89,6 +89,22 @@ export default function NewProjectPage() {
     onError: (e) => toast.error((e as Error).message),
   });
 
+  const importFromUrl = useMutation({
+    mutationFn: async () => {
+      const found = await api.post<{ id: string }>("/api/job-search/postings/import-url", { url: url.trim() });
+      return api.get<{ title: string; company: string; apply_url: string; url: string; description_text: string }>(`/api/job-search/postings/${found.id}`);
+    },
+    onSuccess: (p) => {
+      touched.current = { company: true, role: true };
+      setJobText(p.description_text);
+      setCompany(p.company);
+      setRole(p.title);
+      setUrl(p.apply_url || p.url || url);
+      toast.success("Imported the posting from its careers page");
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
   const generateAfterInterview = async (project: Project) => {
     try {
       const job = await api.post<JobSummary>(`/api/projects/${project.id}/generate`);
@@ -247,8 +263,13 @@ export default function NewProjectPage() {
                   placeholder="Director, Customer Analytics"
                 />
               </Field>
-              <Field label="Posting link" hint="Optional, for your records." htmlFor="url">
-                <Input id="url" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://" />
+              <Field label="Posting link" hint="Optional. For a company careers page, Import fills in the posting for you." htmlFor="url">
+                <div className="flex gap-2">
+                  <Input id="url" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://" />
+                  <Button type="button" variant="outline" onClick={() => importFromUrl.mutate()} disabled={!/^https?:/i.test(url.trim())} loading={importFromUrl.isPending}>
+                    Import
+                  </Button>
+                </div>
               </Field>
               <label className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5">
                 <span>

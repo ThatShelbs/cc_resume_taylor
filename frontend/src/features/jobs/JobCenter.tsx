@@ -73,6 +73,7 @@ export function JobCenter({ children }: { children: ReactNode }) {
       qc.invalidateQueries({ queryKey: keys.system });
       if (pid) qc.invalidateQueries({ queryKey: ["project", pid] });
       if (job.kind === "fact_bank") qc.invalidateQueries({ queryKey: keys.facts });
+      if (job.kind.startsWith("job_search")) qc.invalidateQueries({ queryKey: ["job-search"] });
 
       const view = pid && !location.pathname.includes(pid) ? { label: "Open", onClick: () => navigate(ROUTES.project(pid)) } : undefined;
       if (job.status === "succeeded") {

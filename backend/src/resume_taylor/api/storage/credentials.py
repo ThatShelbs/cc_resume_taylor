@@ -26,28 +26,73 @@ def clean_key(raw: str) -> str:
     return key
 
 
-def load_key(path: Path) -> str | None:
+def _read(path: Path) -> dict:
     try:
-        key = json.loads(path.read_text(encoding="utf-8")).get("anthropic_api_key", "")
+        data = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
-        return None
-    return key if isinstance(key, str) and KEY_PATTERN.match(key) else None
+        return {}
+    return data if isinstance(data, dict) else {}
 
 
-def save_key(path: Path, raw: str) -> None:
-    key = clean_key(raw)
-    atomic_write_text(path, json.dumps({"anthropic_api_key": key}))
+def _write(path: Path, data: dict) -> None:
+    if not data:
+        try:
+            path.unlink()
+        except FileNotFoundError:
+            pass
+        return
+    atomic_write_text(path, json.dumps(data))
     try:
         os.chmod(path, 0o600)  # best effort; a no-op for most Windows setups
     except OSError:
         pass
 
 
+def load_key(path: Path) -> str | None:
+    key = _read(path).get("anthropic_api_key", "")
+    return key if isinstance(key, str) and KEY_PATTERN.match(key) else None
+
+
+def save_key(path: Path, raw: str) -> None:
+    _write(path, {**_read(path), "anthropic_api_key": clean_key(raw)})
+
+
 def clear_key(path: Path) -> None:
-    try:
-        path.unlink()
-    except FileNotFoundError:
-        pass
+    data = _read(path)
+    data.pop("anthropic_api_key", None)
+    _write(path, data)
+
+
+# The optional SerpAPI key (Google Jobs in the job search). Same file, same rules.
+SERP_PATTERN = re.compile(r"^[A-Za-z0-9]{32,80}$")
+SERP_REDACT = re.compile(r"\b[a-f0-9]{64}\b")
+
+
+def clean_serp_key(raw: str) -> str:
+    key = (raw or "").strip().strip('"').strip("'")
+    if not SERP_PATTERN.match(key):
+        raise BadKey("That doesn't look like a SerpAPI key. It is a long run of letters and numbers with no spaces.")
+    return key
+
+
+def load_serp_key(path: Path) -> str | None:
+    key = _read(path).get("serpapi_key", "")
+    return key if isinstance(key, str) and SERP_PATTERN.match(key) else None
+
+
+def save_serp_key(path: Path, raw: str) -> None:
+    _write(path, {**_read(path), "serpapi_key": clean_serp_key(raw)})
+
+
+def clear_serp_key(path: Path) -> None:
+    data = _read(path)
+    data.pop("serpapi_key", None)
+    _write(path, data)
+
+
+def serp_status(path: Path) -> dict:
+    key = load_serp_key(path)
+    return {"set": bool(key), "last4": key[-4:] if key else None}
 
 
 def status(path: Path) -> dict:
@@ -62,4 +107,4 @@ def status(path: Path) -> dict:
 
 
 def redact(text: str) -> str:
-    return REDACT_PATTERN.sub("sk-ant-***", text)
+    return SERP_REDACT.sub("***", REDACT_PATTERN.sub("sk-ant-***", text))

@@ -69,6 +69,9 @@ def job_env(ctx: "AppContext", s: Settings) -> dict:
     key = credentials.load_key(ctx.paths.secrets_path)
     if key:
         env["ANTHROPIC_API_KEY"] = key
+    serp = credentials.load_serp_key(ctx.paths.secrets_path)
+    if serp:
+        env["SERPAPI_KEY"] = serp
     return env
 
 

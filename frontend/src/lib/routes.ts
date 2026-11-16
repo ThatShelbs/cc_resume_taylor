@@ -7,6 +7,10 @@ export const ROUTES = {
   profile: "/profile",
   resume: "/resume",
   evidence: "/evidence",
+  jobSearch: "/job-search",
+  jobSearchPipeline: "/job-search/pipeline",
+  jobSearchCompanies: "/job-search/companies",
+  jobSearchPreferences: "/job-search/preferences",
   settings: "/settings",
   welcome: "/welcome",
 } as const;

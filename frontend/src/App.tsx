@@ -18,6 +18,11 @@ const ResumePage = lazy(() => import("@/features/resume/ResumePage"));
 const EvidencePage = lazy(() => import("@/features/evidence/EvidencePage"));
 const SettingsPage = lazy(() => import("@/features/settings/SettingsPage"));
 const OnboardingPage = lazy(() => import("@/features/onboarding/OnboardingPage"));
+const JobSearchLayout = lazy(() => import("@/features/job-search/JobSearchLayout"));
+const DiscoverPage = lazy(() => import("@/features/job-search/DiscoverPage"));
+const PipelinePage = lazy(() => import("@/features/job-search/PipelinePage"));
+const CompaniesPage = lazy(() => import("@/features/job-search/CompaniesPage"));
+const PreferencesPage = lazy(() => import("@/features/job-search/PreferencesPage"));
 const NotFoundPage = lazy(() => import("@/features/not-found/NotFoundPage"));
 
 function PageFallback() {
@@ -46,6 +51,12 @@ export function App() {
               <Route index element={<ProjectsPage />} />
               <Route path={ROUTES.newProject} element={<NewProjectPage />} />
               <Route path={ROUTES.project(":id")} element={<WorkspacePage />} />
+              <Route path={ROUTES.jobSearch} element={<JobSearchLayout />}>
+                <Route index element={<DiscoverPage />} />
+                <Route path="pipeline" element={<PipelinePage />} />
+                <Route path="companies" element={<CompaniesPage />} />
+                <Route path="preferences" element={<PreferencesPage />} />
+              </Route>
               <Route path={ROUTES.progress} element={<ProgressPage />} />
               <Route path={ROUTES.profile} element={<ProfilePage />} />
               <Route path={ROUTES.resume} element={<ResumePage />} />

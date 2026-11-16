@@ -12,3 +12,4 @@ Run from the repo root (`python scripts/<name>.py`). None of them are imported b
 | `make_template_previews.py` | Re-renders the template thumbnails in `frontend/public/templates/` (needs Word). | contributors |
 | `make_brand_assets.py` | Renders the icon, banner and social preview from `frontend/public/favicon.svg` (needs Playwright). | contributors |
 | `windows/Doctor.bat`, `windows/Update.bat`, `windows/Create Desktop Shortcut.bat` (+ `create_desktop_shortcut.ps1`) | Double-click helpers for non-technical Windows users. | end users |
+- `build_places.py`: optional developer step that builds the US place list for the job search distance rule (downloads one Census file).
