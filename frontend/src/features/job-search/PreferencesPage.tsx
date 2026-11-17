@@ -86,6 +86,21 @@ export default function PreferencesPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: jsKeys.readiness }),
   });
 
+  const connect = useMutation({
+    mutationFn: (site: string) => api.post(`/api/job-search/accounts/${site}/connect`),
+    onSuccess: () => {
+      toast.message("A Chrome window is opening. Sign in there, then come back.");
+      const timer = setInterval(() => qc.invalidateQueries({ queryKey: jsKeys.readiness }), 4000);
+      setTimeout(() => clearInterval(timer), 120000);
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+  const disconnect = useMutation({
+    mutationFn: (site: string) => api.del(`/api/job-search/accounts/${site}`),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: jsKeys.readiness }); toast.success("Disconnected and the saved session was removed"); },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
   if (!form) return <Skeleton className="h-96" />;
 
   return (
@@ -150,6 +165,26 @@ export default function PreferencesPage() {
       </Card>
 
       <Card className="divide-y p-6">
+        <Row title="Connected accounts" description="Search LinkedIn, Indeed and Google Jobs as you, for more relevant roles than the public pages show.">
+          <div className="grid gap-3">
+            {(readiness?.accounts ?? []).map((a) => (
+              <div key={a.site} className="flex flex-wrap items-center gap-3 text-sm">
+                <span className="w-28 font-medium">{a.label}</span>
+                <span className="text-muted-foreground">
+                  {a.cooldown_until ? `Paused until ${new Date(a.cooldown_until).toLocaleString()} (${a.cooldown_reason})`
+                    : a.connected ? `Connected. Today: ${a.used_today.search} of ${a.caps.search} searches` : "Not connected"}
+                </span>
+                <Button variant="outline" size="sm" onClick={() => connect.mutate(a.site)} loading={connect.isPending && connect.variables === a.site}>
+                  {a.connected ? "Sign in again" : "Connect"}
+                </Button>
+                {a.connected && <Button variant="outline" size="sm" onClick={() => disconnect.mutate(a.site)}>Disconnect</Button>}
+              </div>
+            ))}
+            <Callout tone="info">
+              Connect opens a Chrome window. You sign in yourself, including any two-step check, and the app never sees or stores your password; it keeps only the browser session on this computer. Searches run slowly with small daily limits, and stop for the day at the first bot check or sign-out. LinkedIn and Indeed prohibit automated use in their terms, so low volume reduces the risk of a restriction but cannot remove it.
+            </Callout>
+          </div>
+        </Row>
         <Row title="LinkedIn direct (opt-in)" description="Reads a few pages of LinkedIn's public job search, throttled and capped.">
           <div className="grid gap-3">
             <label className="flex items-center gap-3 text-sm">

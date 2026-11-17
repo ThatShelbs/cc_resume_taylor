@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 LEVELS = ["ic", "manager", "senior_manager", "director", "senior_director", "vp", "executive"]
 DEPTHS = ("quick", "standard", "deep")
 COUNTS = (3, 5, 10, 20)
-SOURCES = ("targets", "ideated", "boards", "linkedin", "google")
+SOURCES = ("targets", "ideated", "boards", "linkedin", "google", "linkedin_account", "indeed_account", "google_account")
 
 
 class Preferences(BaseModel):

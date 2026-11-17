@@ -51,6 +51,9 @@ export const SOURCE_LABELS: Record<string, string> = {
   boards: "Job board sweep",
   linkedin: "LinkedIn direct",
   google: "Google Jobs",
+  linkedin_account: "LinkedIn (my account)",
+  indeed_account: "Indeed (my account)",
+  google_account: "Google Jobs (my account)",
 };
 
 export const REJECTION_LABELS: Record<string, string> = {

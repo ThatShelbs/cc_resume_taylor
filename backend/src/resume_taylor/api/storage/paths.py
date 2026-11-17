@@ -88,6 +88,10 @@ class Paths:
         return ["-m", "resume_taylor.search"]
 
     @property
+    def search_login_command(self) -> list[str]:
+        return ["-m", "resume_taylor.search.browser", "login"]
+
+    @property
     def search_discover_command(self) -> list[str]:
         return ["-m", "resume_taylor.search.discover"]
 

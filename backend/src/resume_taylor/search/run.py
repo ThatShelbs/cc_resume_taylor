@@ -16,6 +16,9 @@ from pathlib import Path
 from resume_taylor.pipeline.runtime import stage, warn
 
 from . import freshness
+from .browser.driver import hydrate_detail, search_site, site_of_source
+from .browser.session import BrowserSession, BrowserUnavailable
+from .browser.state import DAILY_CAPS, LABELS, SITES, AccountState, profile_dir
 from .candidate import build_candidate
 from .connectors import board_hits, connector_for
 from .crosswalk import crosswalk, route_from_links
@@ -39,6 +42,11 @@ DEPTH = {
 }
 MAX_SHORTLIST = 80
 WIDEN_TO_DAYS = 30
+
+
+def make_session(site: str, accounts_dir):
+    """An open signed-in browser for one site. Tests replace this with a fake."""
+    return BrowserSession(profile_dir(accounts_dir, site)).__enter__()
 
 
 def _now() -> datetime:
@@ -152,6 +160,27 @@ def run_search(args, client: Client | None = None, progress=print) -> dict:
                 hits += board_hits.serpapi_search(client, serp, q["q"], q["location"])
         else:
             report["notes"].append("Google Jobs was skipped because no SerpAPI key is set.")
+    # signed-in sites: your own accounts, slow and capped (see search/browser)
+    accounts_dir = getattr(args, "accounts_dir", None)
+    accounts = AccountState(Path(accounts_dir) / "accounts.json") if accounts_dir else None
+    sessions: dict = {}
+    for site in SITES:
+        if f"{site}_account" not in prefs.sources:
+            continue
+        if not accounts or not accounts.can_use(site, "search"):
+            report["notes"].append(f"{LABELS[site]} (your account) was skipped: not connected, paused, or at today's limit.")
+            continue
+        try:
+            sessions[site] = make_session(site, accounts_dir)
+            found, note = search_site(site, sessions[site], accounts, expand_queries(prefs, cand, "quick")[:DAILY_CAPS[site]["search"]],
+                                      prefs.recency_days, progress=progress, model=args.model, effort=args.effort)
+        except BrowserUnavailable as exc:
+            report["notes"].append(f"{LABELS[site]} (your account) was skipped: {exc}")
+            sessions.pop(site, None)
+            continue
+        hits += found
+        if note:
+            report["notes"].append(note)
     for src in ("linkedin", "indeed", "glassdoor", "google_jobs", "web", "ziprecruiter", "builtin"):
         n = sum(1 for h in hits if h["source"] == src)
         if n:
@@ -232,6 +261,8 @@ def run_search(args, client: Client | None = None, progress=print) -> dict:
             conn = connector_for(p.get("route") or {})
             if conn and p.get("needs_detail"):
                 conn.hydrate(client, p["route"], p)
+            elif p.get("aggregator_only") and not p.get("description_text") and (site := site_of_source(p["source"])) in sessions:
+                hydrate_detail(site, sessions[site], accounts, p)
             elif p.get("aggregator_only") and p["source"] == "linkedin" and prefs.linkedin_direct and not p.get("description_text"):
                 board_hits.linkedin_detail(client, p)
             v = apply_filters(p, prefs, now, window)
@@ -270,6 +301,10 @@ def run_search(args, client: Client | None = None, progress=print) -> dict:
         if window != windows[-1]:
             report["notes"].append(f"Only {len(results)} of {count} found in {window} days, so the window was widened to {windows[-1]} days. Older postings carry an aging or late badge.")
 
+    for s in sessions.values():
+        if hasattr(s, "close"):
+            s.close()
+
     # -- rank and report -----------------------------------------------------------------------
     stage("ranking")
     results.sort(key=lambda p: (p["fit"]["total"], -(p.get("age_days") or 999)), reverse=True)
@@ -301,7 +336,8 @@ def main(argv=None) -> int:
     ap.add_argument("--fact-bank")
     ap.add_argument("--count", type=int, choices=COUNTS)
     ap.add_argument("--depth", choices=DEPTHS)
-    ap.add_argument("--sources", help="comma list of: targets,ideated,boards,linkedin,google")
+    ap.add_argument("--sources", help="comma list of: targets,ideated,boards,linkedin,google,linkedin_account,indeed_account,google_account")
+    ap.add_argument("--accounts-dir", help="the job_search data folder holding accounts.json and browser profiles")
     ap.add_argument("--recency", type=int)
     ap.add_argument("--out", required=True)
     ap.add_argument("--model")
