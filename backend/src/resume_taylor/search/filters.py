@@ -55,7 +55,58 @@ def _anchors(prefs: Preferences) -> list[tuple[float, float]]:
     return out
 
 
+DEFAULT_NO_RELOCATE_RADIUS = 60
+
+
+def check_location_no_relocation(p: dict, prefs: Preferences) -> tuple[Verdict | None, list[str]]:
+    """Non-relocator: reject anything outside the home area (anchors within the radius, allowed
+    cities) or outside the country, unless it is remote. Only truly unplaceable locations pass."""
+    locs = p.get("parsed_locations") or geo.parse_locations(p.get("locations", []))
+    p["parsed_locations"] = locs
+    mode = p.get("work_mode", "unknown")
+    country = prefs.remote_country
+    if mode == "remote":
+        states = {s.upper() for s in (p.get("remote_states") or [])} | {l["state"] for l in locs if l["state"]}
+        foreign = [l for l in locs if l["country"] == "other"]
+        if foreign and not any(l["country"] == "US" for l in locs):
+            return Verdict(False, "location", f"Remote, but for {foreign[0]['raw']}; you only want remote roles open to {country}."), []
+        if prefs.remote_states and states and not (states & set(prefs.remote_states)):
+            return Verdict(False, "location", f"Remote, but only for {', '.join(sorted(states))}; you can work from {', '.join(prefs.remote_states)}."), []
+        return None, [] if (states or any(l["country"] == "US" for l in locs)) else ["remote eligibility not stated"]
+    radius = prefs.radius_miles or DEFAULT_NO_RELOCATE_RADIUS
+    anchors = _anchors(prefs)
+    area = [geo.parse_location(x) for x in [prefs.home_location, *prefs.anchor_cities, *prefs.allowed_cities] if x]
+    area_states = {a["state"] for a in area if a["state"]}
+    allowed = {(c.split(",")[0].strip().lower(), geo.to_state(c.split(",")[1]) if "," in c else None) for c in prefs.allowed_cities}
+    if not anchors and not allowed:
+        return None, ["no home area set"]
+    if not locs:
+        return None, ["location not stated"]
+    unknown = False
+    for l in locs:
+        if l["country"] == "other":
+            continue
+        if l["remote"] and mode == "unknown":
+            return None, []
+        if l["city"] and any(l["city"].lower() == c and (not st or not l["state"] or st == l["state"]) for c, st in allowed):
+            return None, []
+        if l["lat"] is not None:
+            if anchors and min(geo.miles((l["lat"], l["lon"]), a) for a in anchors) <= radius:
+                return None, []
+        elif l["state"]:
+            if l["state"] in area_states:
+                unknown = True
+        else:
+            unknown = True
+    if unknown:
+        return None, ["location could not be placed on a map"]
+    where = "; ".join(l["raw"] for l in locs[:3])
+    return Verdict(False, "location", f"{where} is outside your {radius}-mile area and you are not relocating."), []
+
+
 def check_location(p: dict, prefs: Preferences) -> tuple[Verdict | None, list[str]]:
+    if prefs.relocation == "no":
+        return check_location_no_relocation(p, prefs)
     has_rule = bool(prefs.home_location or prefs.allowed_cities or prefs.remote_states)
     if not has_rule:
         return None, []

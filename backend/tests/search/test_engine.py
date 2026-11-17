@@ -354,3 +354,21 @@ def test_full_run_never_returns_a_failing_posting_and_ranks_fresh_first(tmp_path
     assert any(c["company"] == "Acme" and c["status"] == "ok" for c in report["coverage"])
     li = [p for p in report["results"] + report["more"] if "linkedin" in p.get("also_listed_on", [])]
     assert li  # the LinkedIn lead was traced back to the careers-page posting
+
+
+def test_non_relocator_keeps_home_area_and_remote_us_only():
+    pf = prefs(relocation="no", home_location="Kenosha, WI", anchor_cities=["Milwaukee, WI", "Chicago, IL"], radius_miles=60)
+    for city in ["Milwaukee, WI", "Kenosha, WI", "Racine, WI", "Evanston, IL", "Naperville, IL", "Waukesha, WI"]:
+        assert filters.apply_filters(posting(locations=[city]), pf, NOW).ok, city
+    for city in ["Austin, TX", "Toronto, Canada", "London, United Kingdom", "Madison, WI"]:
+        assert filters.apply_filters(posting(locations=[city]), pf, NOW).reason == "location", city
+    assert filters.apply_filters(posting(locations=["Remote - US"], work_mode="remote"), pf, NOW).ok
+    assert filters.apply_filters(posting(locations=["Remote - Canada"], work_mode="remote"), pf, NOW).reason == "location"
+    hybrid_tx = posting(locations=["Dallas, TX"], work_mode="hybrid")
+    assert filters.apply_filters(hybrid_tx, pf, NOW).reason == "location"
+
+
+def test_non_relocator_enforced_even_with_radius_zero_and_relocator_unchanged():
+    far = posting(locations=["Houston, TX"])
+    assert filters.apply_filters(far, prefs(relocation="no", home_location="Kenosha, WI"), NOW).reason == "location"
+    assert filters.apply_filters(far, prefs(home_location="Kenosha, WI"), NOW).ok
