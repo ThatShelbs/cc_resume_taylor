@@ -9,6 +9,7 @@ from fastapi import APIRouter, HTTPException
 
 from resume_taylor.pipeline.parsing import parse_applicant_info, parse_prior_resume, parse_profile_skills
 from resume_taylor.search import freshness
+from resume_taylor.search.browser.state import LABELS, SITES, AccountState, profile_dir
 from resume_taylor.search.candidate import readiness
 from resume_taylor.search.http import Client
 from resume_taylor.search.ideation import CLUSTERS
@@ -31,7 +32,7 @@ from ..schemas import (
 from ..services import pipeline_runner
 from ..services.jobs import Job
 from ..storage import credentials
-from ..storage.fs import atomic_write_text
+from ..storage.fs import atomic_write_text, remove_tree
 from ..storage.job_search import MAX_TARGETS, JobSearchError, JobSearchStore
 
 router = APIRouter(prefix="/api/job-search", tags=["job-search"])
@@ -81,8 +82,41 @@ def get_readiness(ctx: Ctx):
         "has_profile": bool(pp), "has_resume": bool(rp), "has_fact_bank": ctx.paths.fact_bank_path.exists(),
         "targets": len(store.targets()), "max_targets": MAX_TARGETS,
         "new_strong": store.count_new_strong(), "serpapi": credentials.serp_status(ctx.paths.secrets_path),
+        "accounts": [_accounts(ctx).status(s) for s in SITES],
         "options": {"counts": list(COUNTS), "depths": list(DEPTHS), "sources": list(SOURCES), "clusters": CLUSTERS},
     }
+
+
+# -- connected accounts ------------------------------------------------------------------------
+# You sign in yourself in a real Chrome window. Only that browser profile is kept (no passwords).
+
+def _accounts(ctx) -> AccountState:
+    return AccountState(ctx.paths.job_search_dir / "accounts.json")
+
+
+@router.get("/accounts")
+def get_accounts(ctx: Ctx):
+    st = _accounts(ctx)
+    return {"accounts": [st.status(s) for s in SITES]}
+
+
+@router.post("/accounts/{site}/connect")
+def connect_account(ctx: Ctx, site: str):
+    if site not in SITES:
+        raise HTTPException(404, "Unknown site.")
+    args = [*ctx.paths.search_login_command, site, "--dir", str(ctx.paths.job_search_dir)]
+    return _submit_search_job(ctx, "job_search_login", f"Sign in to {LABELS[site]} in the browser window", args, 720)
+
+
+@router.delete("/accounts/{site}")
+def disconnect_account(ctx: Ctx, site: str):
+    if site not in SITES:
+        raise HTTPException(404, "Unknown site.")
+    _accounts(ctx).disconnect(site)
+    prof = profile_dir(ctx.paths.job_search_dir, site)
+    if prof.exists():
+        remove_tree(prof)
+    return {"ok": True}
 
 
 @router.get("/preferences")
@@ -240,7 +274,7 @@ def start_search(ctx: Ctx, body: SearchBody):
         *ctx.paths.search_command, "--prefs", str(store.prefs_path), "--targets", str(store.targets_path),
         "--routes", str(store.routes_path), "--store", str(store.postings_path), "--cache-dir", str(store.cache_dir),
         *_input_args(ctx), "--count", str(body.count), "--depth", depth, "--sources", ",".join(sources),
-        "--out", str(out), "--model", s.model, "--effort", s.effort,
+        "--accounts-dir", str(ctx.paths.job_search_dir), "--out", str(out), "--model", s.model, "--effort", s.effort,
     ]
     if body.recency_days:
         args += ["--recency", str(body.recency_days)]

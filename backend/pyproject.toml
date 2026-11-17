@@ -20,6 +20,7 @@ dependencies = [
     "uvicorn[standard]",
     "python-multipart",
     "httpx",
+    "playwright",  # signed-in job board search drives your own installed Chrome
 ]
 
 [project.optional-dependencies]

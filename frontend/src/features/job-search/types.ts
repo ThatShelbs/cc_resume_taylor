@@ -2,7 +2,19 @@
 
 export type Tier = "full" | "partial" | "quick";
 export type Depth = "quick" | "standard" | "deep";
-export type Source = "targets" | "ideated" | "boards" | "linkedin" | "google";
+export type Source = "targets" | "ideated" | "boards" | "linkedin" | "google" | "linkedin_account" | "indeed_account" | "google_account";
+export type AccountSite = "linkedin" | "indeed" | "google";
+export interface AccountStatus {
+  site: AccountSite;
+  label: string;
+  connected: boolean;
+  connected_at: string | null;
+  last_used: string | null;
+  cooldown_until: string | null;
+  cooldown_reason: string;
+  used_today: { search: number; detail: number };
+  caps: { search: number; detail: number };
+}
 export type FreshnessBand = "fresh" | "active" | "aging" | "late" | "unknown";
 export type PostingStage = "prospect" | "interested" | "dismissed";
 
@@ -15,6 +27,7 @@ export interface Readiness {
   max_targets: number;
   new_strong: number;
   serpapi: { set: boolean; last4: string | null };
+  accounts: AccountStatus[];
   options: { counts: number[]; depths: Depth[]; sources: Source[]; clusters: Record<string, string> };
 }
 

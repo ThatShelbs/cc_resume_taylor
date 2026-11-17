@@ -19,7 +19,15 @@ import { jsKeys, usePostings, usePreferences, useReadiness, useRun, useRuns, use
 import { PostingCard } from "./components/PostingCard";
 import { atsLabel, REJECTION_LABELS, SOURCE_LABELS } from "./format";
 import { TailorDialog } from "./TailorDialog";
-import type { Depth, Posting, Source } from "./types";
+import type { AccountStatus, Depth, Posting, Source } from "./types";
+
+function accountGate(accounts: AccountStatus[] | undefined, site: string): string | null {
+  const a = accounts?.find((x) => x.site === site);
+  if (!a?.connected) return "Connect your account in Preferences";
+  if (a.cooldown_until) return `Paused for today (${a.cooldown_reason || "bot check"})`;
+  if (a.used_today.search >= a.caps.search) return "Reached today's search limit";
+  return null;
+}
 
 const DEPTH_INFO: Record<Depth, { label: string; hint: string }> = {
   quick: { label: "Quick", hint: "Your companies plus a short board sweep. A few minutes." },
@@ -140,6 +148,7 @@ export default function DiscoverPage() {
     s === "targets" && targetCount === 0 ? "Add companies on the Companies tab"
     : s === "linkedin" && !prefs?.linkedin_direct ? "Turn on in Preferences (opt-in)"
     : s === "google" && !readiness?.serpapi.set ? "Needs a SerpAPI key in Preferences"
+    : s.endsWith("_account") ? accountGate(readiness?.accounts, s.replace("_account", ""))
     : null;
 
   const groupedRejections = useMemo(() => {
