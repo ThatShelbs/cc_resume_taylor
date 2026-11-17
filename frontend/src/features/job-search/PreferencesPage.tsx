@@ -138,6 +138,25 @@ export default function PreferencesPage() {
       </Card>
 
       <Card className="divide-y p-6">
+        <Row title="Relocation" description="If you will not relocate, any on-site or hybrid role outside your area, or outside the country, is dropped right away. Remote roles open to your country still pass.">
+          <div className="grid gap-3">
+            <label className="flex items-center gap-3 text-sm">
+              <Switch checked={form.relocation === "no"} onCheckedChange={(v) => set("relocation", v ? "no" : "yes")} aria-label="I will not relocate" />
+              I will not relocate
+            </label>
+            {form.relocation === "no" && (
+              <div className="flex flex-wrap items-center gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setForm((f) => f && { ...f, anchor_cities: ["Milwaukee, WI", "Chicago, IL"], radius_miles: 60 })}
+                >
+                  Use Chicagoland and southeast Wisconsin
+                </Button>
+                <span className="text-xs text-muted-foreground">Sets Milwaukee and Chicago as anchors with a 60 mile radius. Add your home city below.</span>
+              </div>
+            )}
+          </div>
+        </Row>
         <Row title="Home location" description="City and state, for the distance rule.">
           <Input value={form.home_location} onChange={(e) => set("home_location", e.target.value)} placeholder="Crystal Lake, IL" aria-label="Home location" className="max-w-xs" />
         </Row>

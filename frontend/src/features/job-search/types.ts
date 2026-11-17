@@ -44,6 +44,8 @@ export interface Preferences {
   anchor_cities: string[];
   allowed_cities: string[];
   remote_states: string[];
+  relocation: "yes" | "no";
+  remote_country: string;
   base_floor: number;
   exclusions: string[];
   recency_days: number;

@@ -60,6 +60,8 @@ class Candidate:
             lines.append("In their words: " + p.about_me.strip()[:1200])
         if p.home_location:
             lines.append("Home location: " + p.home_location)
+        if p.relocation == "no":
+            lines.append("Will not relocate: only roles in the home area or remote.")
         return "\n".join(lines)
 
 
