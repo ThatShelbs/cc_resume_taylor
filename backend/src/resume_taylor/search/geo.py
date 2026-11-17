@@ -73,6 +73,17 @@ King of Prussia|PA|40.09|-75.38;Collegeville|PA|40.19|-75.45;Horsham|PA|40.18|-7
 Rahway|NJ|40.61|-74.28;Kenilworth|NJ|40.67|-74.29;Whitehouse Station|NJ|40.62|-74.77;Titusville|NJ|40.31|-74.86
 Thousand Oaks|CA|34.17|-118.84;Cleveland Heights|OH|41.50|-81.56;Dublin|OH|40.10|-83.11;Honolulu|HI|21.31|-157.86
 Anchorage|AK|61.22|-149.90;Oklahoma City|OK|35.47|-97.52;Little Rock|AR|34.75|-92.29;Jackson|MS|32.30|-90.18
+Waukesha|WI|43.01|-88.23;Brookfield|WI|43.06|-88.11;Oak Creek|WI|42.89|-87.86;Wauwatosa|WI|43.05|-88.01
+West Allis|WI|43.02|-88.01;Franklin|WI|42.89|-88.04;Sturtevant|WI|42.70|-87.90;Glendale|WI|43.14|-87.93
+Menomonee Falls|WI|43.18|-88.12;Germantown|WI|43.23|-88.12;Cudahy|WI|42.96|-87.86;Greenfield|WI|42.96|-88.01
+Pewaukee|WI|43.08|-88.26;Delafield|WI|43.06|-88.40;Muskego|WI|42.91|-88.14;Port Washington|WI|43.39|-87.88
+Burlington|WI|42.68|-88.28;Elkhorn|WI|42.67|-88.54;Cedarburg|WI|43.30|-87.99;Grafton|WI|43.32|-87.95
+Winnetka|IL|42.11|-87.73;Wheeling|IL|42.14|-87.93;Wilmette|IL|42.07|-87.72;Niles|IL|42.02|-87.80
+Park Ridge|IL|42.01|-87.84;Oak Park|IL|41.89|-87.78;Cicero|IL|41.85|-87.75;Orland Park|IL|41.63|-87.85
+Tinley Park|IL|41.57|-87.78;Schiller Park|IL|41.96|-87.87;Bolingbrook|IL|41.70|-88.07;Woodridge|IL|41.75|-88.05
+Hoffman Estates|IL|42.06|-88.12;Bloomingdale|IL|41.94|-88.08;Glen Ellyn|IL|41.88|-88.07;Lombard|IL|41.88|-88.01
+St. Charles|IL|41.91|-88.31;Geneva|IL|41.89|-88.31;Batavia|IL|41.85|-88.31;Lake Barrington|IL|42.21|-88.15
+Round Lake|IL|42.35|-88.09;Antioch|IL|42.48|-88.10;Zion|IL|42.45|-87.84
 """
 
 
@@ -117,8 +128,34 @@ def to_state(token: str) -> str | None:
     return STATES.get(t)
 
 
+# Chicagoland + southeast Wisconsin preset for people who will not relocate.
+CHICAGOLAND_SE_WI = {"anchor_cities": ["Milwaukee, WI", "Chicago, IL"], "radius_miles": 60}
+
+_NON_US = re.compile(
+    r"\b(canada|united kingdom|uk|england|scotland|ireland|germany|france|spain|italy|netherlands|"
+    r"india|china|japan|singapore|australia|new zealand|mexico|brazil|argentina|colombia|poland|"
+    r"romania|israel|philippines|south africa|sweden|norway|denmark|switzerland|portugal|"
+    r"ontario|british columbia|alberta|quebec|toronto|vancouver|london|emea|apac|latam|europe)\b",
+    re.I,
+)
+_US_WORDS = re.compile(r"\b(united states|usa|u\.s\.)\b|\bUS\b", re.I)
+
+
+def country_of(text: str, state: str | None = None) -> str | None:
+    """'US' when a US state or the US is named, 'other' when a non-US country/city is named, else None."""
+    if state or _US_WORDS.search(text or ""):
+        return "US"
+    return "other" if _NON_US.search(text or "") else None
+
+
 def parse_location(raw: str) -> dict:
-    """{raw, city, state, lat, lon, remote}. Fields are None when they can't be determined."""
+    """{raw, city, state, lat, lon, remote, country}. Fields are None when they can't be determined."""
+    out = _parse_location(raw)
+    out["country"] = country_of(out["raw"], out["state"])
+    return out
+
+
+def _parse_location(raw: str) -> dict:
     text = (raw or "").strip()
     out = {"raw": text, "city": None, "state": None, "lat": None, "lon": None,
            "remote": bool(re.search(r"\bremote\b|work from home|anywhere", text, re.I))}

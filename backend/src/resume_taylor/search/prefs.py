@@ -24,6 +24,8 @@ class Preferences(BaseModel):
     anchor_cities: list[str] = Field(default_factory=list)
     allowed_cities: list[str] = Field(default_factory=list)
     remote_states: list[str] = Field(default_factory=list)  # remote roles must allow one of these
+    relocation: str = "yes"  # "no" = never relocate: only the home area (radius) or remote
+    remote_country: str = "US"  # when not relocating, remote roles must be open to this country
     base_floor: int = 0  # minimum base salary, 0 = off
     exclusions: list[str] = Field(default_factory=list)  # phrases that reject a posting
     recency_days: int = 14
@@ -40,6 +42,8 @@ class Preferences(BaseModel):
         data["recency_days"] = max(1, min(90, int(data["recency_days"])))
         data["radius_miles"] = max(0, int(data["radius_miles"]))
         data["base_floor"] = max(0, int(data["base_floor"]))
+        data["relocation"] = "no" if str(data["relocation"]).lower() == "no" else "yes"
+        data["remote_country"] = (data["remote_country"] or "US").strip().upper() or "US"
         data["sources"] = [s for s in data["sources"] if s in SOURCES]
         data["remote_states"] = [s.strip().upper() for s in data["remote_states"] if s.strip()]
         return Preferences(**data)
