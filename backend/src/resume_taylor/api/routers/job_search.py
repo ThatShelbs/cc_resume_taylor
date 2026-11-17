@@ -108,6 +108,13 @@ def connect_account(ctx: Ctx, site: str):
     return _submit_search_job(ctx, "job_search_login", f"Sign in to {LABELS[site]} in the browser window", args, 720)
 
 
+@router.post("/accounts/cancel-login")
+def cancel_login(ctx: Ctx):
+    """Stop a sign-in window that is still waiting (also closes its Chrome window)."""
+    stopped = [j.id for j in ctx.jobs.active() if j.kind == "job_search_login" and ctx.jobs.cancel(j.id)]
+    return {"cancelled": stopped}
+
+
 @router.delete("/accounts/{site}")
 def disconnect_account(ctx: Ctx, site: str):
     if site not in SITES:
