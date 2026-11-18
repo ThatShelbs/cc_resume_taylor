@@ -9,6 +9,10 @@ from pathlib import Path
 from .state import human_delay, tripped
 
 
+# A cookie that only exists once you are signed in (LinkedIn can land on many pages after login).
+SESSION_COOKIES = {"linkedin": "li_at", "google": "SID"}
+
+
 @dataclass
 class Page:
     url: str
@@ -77,12 +81,17 @@ class BrowserSession:
         """Block while the user signs in by hand. True once they land on a normal page for the site."""
         import time
         end = time.time() + timeout_s
+        cookie = SESSION_COOKIES.get(site)
         while time.time() < end:
             try:
-                u = self._page.url
+                # Playwright's sync API only processes browser events while it is waiting on its own
+                # clock; time.sleep() would leave page.url frozen at the login page forever.
+                self._page.wait_for_timeout(2000)
+                if cookie and any(c.get("name") == cookie for c in self._ctx.cookies()):
+                    return True
+                urls = [p.url for p in self._ctx.pages]
             except Exception:  # window closed
                 return False
-            if signed_in_url in u and not tripped(u, ""):
+            if any(signed_in_url in u and not tripped(u, "") for u in urls):
                 return True
-            time.sleep(2)
         return False

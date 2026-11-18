@@ -91,8 +91,13 @@ export default function PreferencesPage() {
     onSuccess: () => {
       toast.message("A Chrome window is opening. Sign in there, then come back.");
       const timer = setInterval(() => qc.invalidateQueries({ queryKey: jsKeys.readiness }), 4000);
-      setTimeout(() => clearInterval(timer), 120000);
+      setTimeout(() => clearInterval(timer), 720000);
     },
+    onError: (e) => toast.error((e as Error).message),
+  });
+  const cancelLogin = useMutation({
+    mutationFn: () => api.post("/api/job-search/accounts/cancel-login"),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: jsKeys.readiness }); toast.success("Sign-in cancelled"); },
     onError: (e) => toast.error((e as Error).message),
   });
   const disconnect = useMutation({
@@ -196,6 +201,7 @@ export default function PreferencesPage() {
                 <Button variant="outline" size="sm" onClick={() => connect.mutate(a.site)} loading={connect.isPending && connect.variables === a.site}>
                   {a.connected ? "Sign in again" : "Connect"}
                 </Button>
+                {!a.connected && <Button variant="ghost" size="sm" onClick={() => cancelLogin.mutate()} loading={cancelLogin.isPending}>Cancel sign-in</Button>}
                 {a.connected && <Button variant="outline" size="sm" onClick={() => disconnect.mutate(a.site)}>Disconnect</Button>}
               </div>
             ))}
