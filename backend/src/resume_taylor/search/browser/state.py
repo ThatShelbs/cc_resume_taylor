@@ -1,7 +1,7 @@
 """Per-site account state and pacing rules. State only, never a secret: whether you signed in,
-when, how much was used today, and whether a site is cooling down after a bot check.
+when, what the last search run used, and whether a site is cooling down after a bot check.
 
-Shared by the API (shows status) and the search subprocess (enforces caps), so it is stdlib only
+Shared by the API (shows status) and the search subprocess (enforces the per-run budget), so it is stdlib only
 and keeps everything in one small JSON file."""
 
 import json
@@ -11,16 +11,16 @@ import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-SITES = ("linkedin", "indeed", "google")
-LABELS = {"linkedin": "LinkedIn", "indeed": "Indeed", "google": "Google Jobs"}
-SOURCE_FOR_SITE = {"linkedin": "linkedin", "indeed": "indeed", "google": "google_jobs"}
+SITES = ("linkedin", "indeed", "ziprecruiter")
+LABELS = {"linkedin": "LinkedIn", "indeed": "Indeed", "ziprecruiter": "ZipRecruiter"}
+SOURCE_FOR_SITE = {"linkedin": "linkedin", "indeed": "indeed", "ziprecruiter": "ziprecruiter"}
+# Sites whose job search works in a normal browser without signing in. Signing in is still offered.
+LOGIN_OPTIONAL = frozenset({"ziprecruiter"})
+# Sites this app no longer supports; their state and browser profile are cleaned up on sight.
+RETIRED_SITES = ("google",)
 
-# Deliberately small. A person doing a job hunt looks at a handful of searches a day.
-DAILY_CAPS = {
-    "linkedin": {"search": 3, "detail": 20},
-    "indeed": {"search": 3, "detail": 20},
-    "google": {"search": 3, "detail": 0},
-}
+# Per search run, per site. There is no daily cap; the bot-check cooldown below is what protects the account.
+RUN_BUDGET = {"search": 10, "detail": 20}
 COOLDOWN_HOURS = 24
 DELAY_RANGE = (3.0, 9.0)  # seconds between page actions
 
@@ -30,7 +30,7 @@ TRIPWIRE_MARKERS = (
     "are you a robot", "security check", "checkpoint", "temporarily restricted", "too many requests",
     "access denied", "press and hold", "i'm not a robot",
 )
-LOGIN_URL_MARKERS = ("/login", "/uas/login", "/authwall", "/checkpoint", "accounts.google.com", "secure.indeed.com/auth", "/signin")
+LOGIN_URL_MARKERS = ("/login", "/uas/login", "/authwall", "/checkpoint", "secure.indeed.com/auth", "/signin")
 
 
 def _utc() -> datetime:
@@ -80,23 +80,19 @@ class AccountState:
         os.replace(tmp, self.path)
 
     def _site(self, data: dict, site: str) -> dict:
-        s = data.setdefault(site, {})
-        today = self._now().date().isoformat()
-        if s.get("day") != today:
-            s["day"], s["search"], s["detail"] = today, 0, 0
-        return s
+        return data.setdefault(site, {})
 
     # -- queries
     def status(self, site: str) -> dict:
-        data = self._read()
-        s = self._site(data, site)
+        s = self._read().get(site, {})
         cooling = self.cooling_until(site)
         return {
             "site": site, "label": LABELS[site], "connected": bool(s.get("connected_at")),
+            "login_optional": site in LOGIN_OPTIONAL, "ready": self.can_use(site),
             "connected_at": s.get("connected_at"), "last_used": s.get("last_used"),
             "cooldown_until": cooling.isoformat(timespec="minutes") if cooling else None,
             "cooldown_reason": s.get("cooldown_reason", "") if cooling else "",
-            "used_today": {"search": s.get("search", 0), "detail": s.get("detail", 0)}, "caps": DAILY_CAPS[site],
+            "budget": dict(RUN_BUDGET), "last_run": s.get("last_run"),
         }
 
     def cooling_until(self, site: str) -> datetime | None:
@@ -107,10 +103,10 @@ class AccountState:
             return None
         return until if until and until > self._now() else None
 
-    def can_use(self, site: str, kind: str) -> bool:
-        """Connected, not cooling down, and under today's cap for this kind of action."""
-        s = self._site(self._read(), site)
-        return bool(s.get("connected_at")) and not self.cooling_until(site) and s.get(kind, 0) < DAILY_CAPS[site][kind]
+    def can_use(self, site: str) -> bool:
+        """Signed in (or a site that does not need it) and not cooling down after a bot check."""
+        s = self._read().get(site, {})
+        return (bool(s.get("connected_at")) or site in LOGIN_OPTIONAL) and not self.cooling_until(site)
 
     # -- changes
     def mark_connected(self, site: str) -> None:
@@ -125,11 +121,13 @@ class AccountState:
         data.pop(site, None)
         self._write(data)
 
-    def record(self, site: str, kind: str) -> None:
+    def record_run(self, site: str, usage: dict) -> None:
+        """What one search run used on this site, kept for display only."""
         data = self._read()
         s = self._site(data, site)
-        s[kind] = s.get(kind, 0) + 1
-        s["last_used"] = self._now().isoformat(timespec="seconds")
+        now = self._now().isoformat(timespec="seconds")
+        s["last_run"] = {"search": int(usage.get("search", 0)), "detail": int(usage.get("detail", 0)), "at": now}
+        s["last_used"] = now
         self._write(data)
 
     def trip(self, site: str, reason: str) -> None:
@@ -141,3 +139,18 @@ class AccountState:
         if reason == "signed out":
             s.pop("connected_at", None)
         self._write(data)
+
+    def forget_retired(self) -> list[str]:
+        """Drop state for sites the app no longer supports. Returns the ones removed."""
+        data = self._read()
+        gone = [k for k in RETIRED_SITES if k in data]
+        if gone:
+            for k in gone:
+                data.pop(k)
+            self._write(data)
+        return gone
+
+
+def new_usage() -> dict:
+    """A per-run counter for one site."""
+    return {"search": 0, "detail": 0}

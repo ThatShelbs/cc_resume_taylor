@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { api } from "@/lib/api/client";
 import { jsKeys, usePreferences, useReadiness } from "./api";
-import type { Preferences } from "./types";
+import type { AccountStatus, Preferences } from "./types";
 
 const LEVELS = [
   { value: "manager", label: "Manager" },
@@ -42,7 +42,6 @@ export default function PreferencesPage() {
   const { data: saved } = usePreferences();
   const { data: readiness } = useReadiness();
   const [form, setForm] = useState<Preferences | null>(null);
-  const [serpKey, setSerpKey] = useState("");
 
   useEffect(() => {
     if (saved && !form) setForm(saved);
@@ -74,16 +73,6 @@ export default function PreferencesPage() {
       toast.success("Filled the empty fields from your profile. Review them, then save.");
     },
     onError: (e) => toast.error((e as Error).message),
-  });
-
-  const saveKey = useMutation({
-    mutationFn: () => api.put("/api/settings/serpapi-key", { key: serpKey }),
-    onSuccess: () => { setSerpKey(""); qc.invalidateQueries({ queryKey: jsKeys.readiness }); toast.success("SerpAPI key saved"); },
-    onError: (e) => toast.error((e as Error).message),
-  });
-  const clearKey = useMutation({
-    mutationFn: () => api.del("/api/settings/serpapi-key"),
-    onSuccess: () => qc.invalidateQueries({ queryKey: jsKeys.readiness }),
   });
 
   const connect = useMutation({
@@ -189,15 +178,12 @@ export default function PreferencesPage() {
       </Card>
 
       <Card className="divide-y p-6">
-        <Row title="Connected accounts" description="Search LinkedIn, Indeed and Google Jobs as you, for more relevant roles than the public pages show.">
+        <Row title="Connected accounts" description="Search LinkedIn, Indeed and ZipRecruiter in your own browser, for more relevant roles than the public pages show. Each search run uses up to 10 searches per site.">
           <div className="grid gap-3">
             {(readiness?.accounts ?? []).map((a) => (
               <div key={a.site} className="flex flex-wrap items-center gap-3 text-sm">
                 <span className="w-28 font-medium">{a.label}</span>
-                <span className="text-muted-foreground">
-                  {a.cooldown_until ? `Paused until ${new Date(a.cooldown_until).toLocaleString()} (${a.cooldown_reason})`
-                    : a.connected ? `Connected. Today: ${a.used_today.search} of ${a.caps.search} searches` : "Not connected"}
-                </span>
+                <span className="text-muted-foreground">{accountStatusText(a)}</span>
                 <Button variant="outline" size="sm" onClick={() => connect.mutate(a.site)} loading={connect.isPending && connect.variables === a.site}>
                   {a.connected ? "Sign in again" : "Connect"}
                 </Button>
@@ -206,7 +192,7 @@ export default function PreferencesPage() {
               </div>
             ))}
             <Callout tone="info">
-              Connect opens a Chrome window. You sign in yourself, including any two-step check, and the app never sees or stores your password; it keeps only the browser session on this computer. Searches run slowly with small daily limits, and stop for the day at the first bot check or sign-out. LinkedIn and Indeed prohibit automated use in their terms, so low volume reduces the risk of a restriction but cannot remove it.
+              Connect opens a Chrome window. You sign in yourself, including any two-step check, and the app never sees or stores your password; it keeps only the browser session on this computer. Each search run does up to 10 searches per site at a person's pace, and a site stops for a day at the first bot check or sign-out. LinkedIn, Indeed and ZipRecruiter prohibit automated use in their terms, so a slow pace reduces the risk of a restriction but cannot remove it.
             </Callout>
           </div>
         </Row>
@@ -221,22 +207,15 @@ export default function PreferencesPage() {
             </Callout>
           </div>
         </Row>
-        <Row title="Google Jobs (optional)" description="Adds Google Jobs results through a SerpAPI key. Never shown again after saving.">
-          <div className="flex flex-wrap items-center gap-2">
-            {readiness?.serpapi.set ? (
-              <>
-                <span className="text-sm">Key saved, ending {readiness.serpapi.last4}</span>
-                <Button variant="outline" size="sm" onClick={() => clearKey.mutate()}>Remove</Button>
-              </>
-            ) : (
-              <>
-                <Input type="password" value={serpKey} onChange={(e) => setSerpKey(e.target.value)} placeholder="SerpAPI key" aria-label="SerpAPI key" className="max-w-xs" autoComplete="off" />
-                <Button variant="outline" size="sm" onClick={() => saveKey.mutate()} disabled={!serpKey.trim()} loading={saveKey.isPending}>Save key</Button>
-              </>
-            )}
-          </div>
-        </Row>
       </Card>
     </div>
   );
+}
+
+function accountStatusText(a: AccountStatus): string {
+  if (a.cooldown_until) return `Paused until ${new Date(a.cooldown_until).toLocaleString()} (${a.cooldown_reason})`;
+  const last = a.last_run ? ` Last run used ${a.last_run.search} of ${a.budget.search}.` : "";
+  if (a.connected) return `Connected. Up to ${a.budget.search} searches per run.${last}`;
+  if (a.login_optional) return `Works without signing in; sign in for results tailored to you.${last}`;
+  return "Not connected";
 }

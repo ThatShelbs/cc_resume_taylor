@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { FileUp, Globe, Sparkles, Trash2 } from "lucide-react";
+import { ExternalLink, FileUp, Globe, Sparkles, Trash2 } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -30,7 +30,8 @@ interface AddResult { added: string[]; skipped: string[]; over_limit: string[]; 
 function RouteChip({ t }: { t: Target }) {
   const r = t.route;
   if (r.status === "resolved") {
-    return <Badge variant="success">{atsLabel(r.ats)}{r.job_count !== null ? `, ${r.job_count} postings` : ""}</Badge>;
+    const chip = <Badge variant="success">{atsLabel(r.ats)}{r.job_count !== null ? `, ${r.job_count} postings` : ""}</Badge>;
+    return r.board_url ? <a href={r.board_url} target="_blank" rel="noreferrer" title="Open the job board">{chip}</a> : chip;
   }
   if (r.status === "failed") return <Badge variant="warning" title={r.note}>Not found. Add its careers URL</Badge>;
   return <Badge variant="outline">Not checked yet</Badge>;
@@ -44,15 +45,30 @@ function UrlCell({ t }: { t: Target }) {
     onSuccess: () => qc.invalidateQueries({ queryKey: jsKeys.all }),
     onError: (e) => toast.error((e as Error).message),
   });
+  const found = t.route.careers_url && t.route.careers_url !== value ? t.route.careers_url : "";
   return (
-    <Input
-      value={value}
-      onChange={(e) => setValue(e.target.value)}
-      onBlur={() => value !== t.careers_url && save.mutate()}
-      placeholder="https://careers.example.com"
-      aria-label={`Careers page for ${t.name}`}
-      className="h-8 text-xs"
-    />
+    <div className="grid gap-1">
+      <div className="flex items-center gap-1">
+        <Input
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onBlur={() => value !== t.careers_url && save.mutate()}
+          placeholder="https://careers.example.com"
+          aria-label={`Careers page for ${t.name}`}
+          className="h-8 text-xs"
+        />
+        {value && (
+          <Button asChild size="icon-sm" variant="ghost" aria-label={`Open ${t.name}'s careers page`}>
+            <a href={value} target="_blank" rel="noreferrer"><ExternalLink /></a>
+          </Button>
+        )}
+      </div>
+      {found && (
+        <a href={found} target="_blank" rel="noreferrer" className="truncate text-xs text-muted-foreground underline-offset-2 hover:underline" title={found}>
+          Found: {found.replace(/^https?:\/\//, "")}
+        </a>
+      )}
+    </div>
   );
 }
 

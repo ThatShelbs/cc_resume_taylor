@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, Radar, Sparkles } from "lucide-react";
+import { ChevronDown, ExternalLink, Radar, Sparkles } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -23,9 +23,9 @@ import type { AccountStatus, Depth, Posting, Source } from "./types";
 
 function accountGate(accounts: AccountStatus[] | undefined, site: string): string | null {
   const a = accounts?.find((x) => x.site === site);
-  if (!a?.connected) return "Connect your account in Preferences";
+  if (!a) return "Not available";
   if (a.cooldown_until) return `Paused for today (${a.cooldown_reason || "bot check"})`;
-  if (a.used_today.search >= a.caps.search) return "Reached today's search limit";
+  if (!a.connected && !a.login_optional) return "Connect your account in Preferences";
   return null;
 }
 
@@ -147,7 +147,6 @@ export default function DiscoverPage() {
   const sourceDisabled = (s: Source): string | null =>
     s === "targets" && targetCount === 0 ? "Add companies on the Companies tab"
     : s === "linkedin" && !prefs?.linkedin_direct ? "Turn on in Preferences (opt-in)"
-    : s === "google" && !readiness?.serpapi.set ? "Needs a SerpAPI key in Preferences"
     : s.endsWith("_account") ? accountGate(readiness?.accounts, s.replace("_account", ""))
     : null;
 
@@ -271,13 +270,22 @@ export default function DiscoverPage() {
             </div>
           </details>
           <details className="rounded-lg border px-4 py-3 text-sm">
-            <summary className="flex cursor-pointer items-center gap-2 font-medium"><ChevronDown className="size-4" />Coverage by company ({report.coverage.length})</summary>
+            <summary className="flex cursor-pointer items-center gap-2 font-medium"><ChevronDown className="size-4" />Careers pages searched ({report.coverage.length})</summary>
             <table className="mt-3 w-full text-left text-xs">
               <thead className="text-muted-foreground"><tr><th className="py-1 font-medium">Company</th><th className="font-medium">Source</th><th className="font-medium">Postings</th><th className="font-medium">Status</th></tr></thead>
               <tbody>
                 {report.coverage.map((c) => (
                   <tr key={c.company + c.origin} className="border-t">
-                    <td className="py-1.5">{c.company}</td>
+                    <td className="py-1.5">
+                      {c.careers_url ? (
+                        <a href={c.careers_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 underline-offset-2 hover:underline" title="Open the company's careers page">
+                          {c.company}<ExternalLink className="size-3" aria-hidden />
+                        </a>
+                      ) : c.company}
+                      {c.search_url && (
+                        <a href={c.search_url} target="_blank" rel="noreferrer" className="ml-2 text-muted-foreground underline-offset-2 hover:underline">search there</a>
+                      )}
+                    </td>
                     <td>{c.ats ? atsLabel(c.ats) : "None found"}</td>
                     <td className="tabular-nums">{c.count}</td>
                     <td className={c.status === "ok" ? "text-success" : "text-warning"}>{c.status === "ok" ? "Connected" : c.note || "Not connected"}</td>

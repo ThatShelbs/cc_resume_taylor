@@ -139,6 +139,8 @@ def location_points(p: dict, flags: list[str]) -> int:
 def source_points(p: dict) -> int:
     if p.get("aggregator_only"):
         return 0
+    if p.get("agency"):
+        return 3  # a distinct listing, but through a staffing agency rather than the employer
     boards = len(p.get("also_listed_on", []))
     return 5 if boards == 0 else 3 if boards == 1 else 2
 
