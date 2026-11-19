@@ -14,6 +14,7 @@ SOURCES = ("targets", "ideated", "boards", "linkedin", "google", "linkedin_accou
 class Preferences(BaseModel):
     titles: list[str] = Field(default_factory=list)  # title variants to search
     equivalent_titles: list[str] = Field(default_factory=list)  # treated as at least director
+    title_keywords: list[str] = Field(default_factory=list)  # role family words, such as "medical affairs"
     min_level: str = "director"
     skill_terms: list[str] = Field(default_factory=list)
     industries: list[str] = Field(default_factory=list)

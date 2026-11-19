@@ -36,9 +36,71 @@ def make_id(p: dict) -> str:
     return hashlib.sha1(key.encode("utf-8")).hexdigest()[:12]
 
 
+_LEGAL = {"inc", "llc", "ltd", "corp", "corporation", "co", "company", "plc", "gmbh", "group", "holdings", "the"}
+# Trailing words that name a descriptor or a division, not a different company: "Veeva Systems" is
+# Veeva, "Johnson & Johnson MedTech" is Johnson & Johnson. Stripped only while a real name remains.
+_DESCRIPTORS = [
+    ["innovative", "medicine"], ["consumer", "health"], ["systems"], ["technologies"], ["technology"], ["labs"],
+    ["software"], ["pharmaceuticals"], ["pharmaceutical"], ["pharma"], ["therapeutics"], ["biosciences"],
+    ["medicine"], ["medtech"], ["healthcare"], ["health"], ["biotech"], ["international"], ["global"],
+    ["america"], ["americas"], ["usa"], ["us"],
+]
+# Abbreviations and sibling names that point at one company (normalized, letters and digits only).
+COMPANY_ALIASES = {
+    "jj": "johnsonjohnson", "jnj": "johnsonjohnson", "janssen": "johnsonjohnson",
+    "gsk": "glaxosmithkline", "bms": "bristolmyerssquibb", "bristolmyers": "bristolmyerssquibb",
+    "msd": "merck", "mercksharpdohme": "merck", "az": "astrazeneca", "pg": "procterandgamble",
+    "ge": "generalelectric", "ibm": "internationalbusinessmachines", "lilly": "elililly",
+    "boehringer": "boehringeringelheim", "jpmorgan": "jpmorganchase", "jpmc": "jpmorganchase",
+}
+_DESC_MAX_PASSES = 3
+
+
+def _words(name: str) -> list[str]:
+    s = name.lower().replace("&amp;", "&")
+    s = re.sub(r"(?<=\b[a-z])&(?=[a-z]\b)", "", s)  # J&J -> jj
+    s = s.replace("&", " ")
+    return re.findall(r"[a-z0-9]+", s)
+
+
+def company_key(name: str) -> str:
+    """One stable key per company, tolerant of legal suffixes, descriptors, divisions and common
+    abbreviations. Equal keys mean the same company; never used to display a name."""
+    words = [w for w in _words(name) if w not in _LEGAL]
+    while words and words[-1] == "and":  # "Eli Lilly and Company"
+        words.pop()
+    if not words:
+        return ""
+    for _ in range(_DESC_MAX_PASSES):
+        for tail in _DESCRIPTORS:
+            n = len(tail)
+            if len(words) > n and words[-n:] == tail:
+                rest = "".join(words[:-n])
+                if len(rest) >= 4 or rest in COMPANY_ALIASES:
+                    words = words[:-n]
+                    break
+        else:
+            break
+    key = "".join(words)
+    return COMPANY_ALIASES.get(key, key)
+
+
 def norm_company(name: str) -> str:
-    name = re.sub(r"\b(inc|llc|ltd|corp|corporation|co|company|plc|gmbh|group|holdings)\b\.?", "", name.lower())
-    return re.sub(r"[^a-z0-9]+", "", name)
+    return company_key(name)
+
+
+def same_company(a: str, b: str) -> bool:
+    """True when two names plausibly mean one company: equal keys, or one is the initials of the other."""
+    ka, kb = company_key(a), company_key(b)
+    if not ka or not kb:
+        return False
+    if ka == kb:
+        return True
+    for short, long_name in ((ka, b), (kb, a)):
+        initials = "".join(w[0] for w in _words(long_name) if w not in _LEGAL)
+        if 2 <= len(short) <= 4 and short == initials:
+            return True
+    return False
 
 
 def norm_title(title: str) -> str:

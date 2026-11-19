@@ -26,6 +26,22 @@ LIST_SYSTEM = (
 )
 
 
+_SECOND_LEVEL = {"co", "com", "org", "net", "gov", "ac", "edu"}
+
+
+def registrable_domain(host: str) -> str:
+    """example.co.uk for jobs.example.co.uk; example.com for careers.example.com."""
+    labels = [l for l in (host or "").lower().split(":")[0].split(".") if l]
+    if len(labels) >= 3 and labels[-2] in _SECOND_LEVEL and len(labels[-1]) == 2:
+        return ".".join(labels[-3:])
+    return ".".join(labels[-2:])
+
+
+def same_site(url: str, other: str) -> bool:
+    a, b = urlsplit(url).netloc, urlsplit(other).netloc
+    return bool(a and b and (a.lower() == b.lower() or registrable_domain(a) == registrable_domain(b)))
+
+
 def _walk(node):
     if isinstance(node, dict):
         if str(node.get("@type", "")).lower() == "jobposting" or "JobPosting" in (node.get("@type") or []):
@@ -75,18 +91,26 @@ def _pay(job: dict) -> dict:
             "currency": (job.get("baseSalary") or {}).get("currency") or "USD", "pay_period": "year"}
 
 
-def posting_from_jsonld(job: dict, company: str, url: str, read_by_claude: bool = False) -> dict:
+def posting_from_jsonld(job: dict, company: str, url: str, read_by_claude: bool = False, external_id: str = "") -> dict:
     text = html_to_text(job.get("description", ""))
     org = job.get("hiringOrganization") or {}
     ident = job.get("identifier") or {}
     p = new_posting(
         source=NAME, ats=NAME, company=company or (org.get("name") if isinstance(org, dict) else ""),
         title=job.get("title", ""), req_id=str(ident.get("value", "") if isinstance(ident, dict) else ident or ""),
-        external_id=url, locations=_loc(job), posted_at=job.get("datePosted"),
+        external_id=external_id or url, locations=_loc(job), posted_at=job.get("datePosted"),
         posted_at_source="ats" if job.get("datePosted") else "", closes_at=job.get("validThrough"),
         url=url, apply_url=job.get("url") or url, description_text=text, read_by_claude=read_by_claude, **_pay(job),
     )
     return with_pay(p, text)
+
+
+def _listing_id(job: dict, listing_url: str, index: int) -> str:
+    """A stable id for a posting read from a listing page: its own URL or requisition id, never the
+    listing's URL alone (that would give every posting on the page the same id)."""
+    ident = job.get("identifier") or {}
+    req = str(ident.get("value", "") if isinstance(ident, dict) else ident or "")
+    return job.get("url") or (f"{listing_url}#{req}" if req else f"{listing_url}#{index}-{job.get('title', '')}")
 
 
 def _fetch_posting(client, url: str, company: str, read_by_claude: bool) -> list[dict]:
@@ -99,7 +123,8 @@ def list_jobs(client, route: dict, company: str, queries: list[str]) -> list[dic
     if not url:
         return []
     html = client.get_text(url, robots=True)
-    out = [posting_from_jsonld(j, company, url) for j in jsonld_postings(html or "")]
+    out = [posting_from_jsonld(j, company, j.get("url") or url, external_id=_listing_id(j, url, i))
+           for i, j in enumerate(jsonld_postings(html or ""))]
     if out:
         return out
     # JavaScript-rendered listing: let Claude find the posting URLs, then read each page ourselves.
@@ -107,12 +132,11 @@ def list_jobs(client, route: dict, company: str, queries: list[str]) -> list[dic
         LIST_SYSTEM, f"Company: {company}\nCareers page: {url}\nTitles of interest: {', '.join(queries[:6]) or 'any senior role'}",
         tools=claude.WEB_TOOLS, label=f"Reading {company}'s careers page",
     )
-    host = urlsplit(url).netloc.split(".", 1)[-1]
     for u in ((reply or {}).get("urls") if isinstance(reply, dict) else None) or []:
         u = urljoin(url, str(u))
         if len(out) >= MAX_LISTED:
             break
-        if host and host not in urlsplit(u).netloc and urlsplit(u).netloc != urlsplit(url).netloc:
+        if not same_site(url, u):
             continue  # stay on the company's own site
         out.extend(_fetch_posting(client, u, company, read_by_claude=True))
     return out

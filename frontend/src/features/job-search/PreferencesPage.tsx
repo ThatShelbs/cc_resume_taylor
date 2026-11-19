@@ -6,6 +6,7 @@ import { Callout } from "@/components/shared/Callout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input, Textarea } from "@/components/ui/input";
+import { ListField, NumberField } from "./components/ListField";
 import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
@@ -14,6 +15,7 @@ import { jsKeys, usePreferences, useReadiness } from "./api";
 import type { Preferences } from "./types";
 
 const LEVELS = [
+  { value: "ic", label: "Individual contributor" },
   { value: "manager", label: "Manager" },
   { value: "senior_manager", label: "Senior manager" },
   { value: "director", label: "Director" },
@@ -21,9 +23,6 @@ const LEVELS = [
   { value: "vp", label: "VP" },
   { value: "executive", label: "Executive" },
 ];
-
-const lines = (s: string) => s.split("\n").map((x) => x.trim()).filter(Boolean);
-const text = (a: string[]) => a.join("\n");
 
 function Row({ title, description, children }: { title: string; description?: ReactNode; children: ReactNode }) {
   return (
@@ -120,22 +119,22 @@ export default function PreferencesPage() {
 
       <Card className="divide-y p-6">
         <Row title="Titles to search" description="One per line. Director, Sr Director, Head of, and similar.">
-          <Textarea rows={4} value={text(form.titles)} onChange={(e) => set("titles", lines(e.target.value))} aria-label="Titles to search" placeholder={"Director, Data Science\nHead of Analytics"} />
+          <ListField rows={4} value={form.titles} onChange={(v) => set("titles", v)} aria-label="Titles to search" placeholder={"Director, Data Science\nHead of Analytics"} />
         </Row>
         <Row title="Minimum level" description="Postings below this level are dropped.">
           <div className="max-w-56"><Select value={form.min_level} onValueChange={(v) => set("min_level", v)} options={LEVELS} aria-label="Minimum level" /></div>
         </Row>
         <Row title="Counts as director level" description="Titles like Principal or Lead that you treat as director-equivalent. One per line.">
-          <Textarea rows={2} value={text(form.equivalent_titles)} onChange={(e) => set("equivalent_titles", lines(e.target.value))} aria-label="Director-equivalent titles" placeholder="Principal" />
+          <ListField rows={2} value={form.equivalent_titles} onChange={(v) => set("equivalent_titles", v)} aria-label="Director-equivalent titles" placeholder="Principal" />
         </Row>
         <Row title="Skills and themes" description="Used to find and rank roles. One per line.">
-          <Textarea rows={4} value={text(form.skill_terms)} onChange={(e) => set("skill_terms", lines(e.target.value))} aria-label="Skills and themes" />
+          <ListField rows={4} value={form.skill_terms} onChange={(v) => set("skill_terms", v)} aria-label="Skills and themes" />
         </Row>
         <Row title="Industries" description="Helps suggest companies, especially before you have a resume.">
-          <Textarea rows={2} value={text(form.industries)} onChange={(e) => set("industries", lines(e.target.value))} aria-label="Industries" placeholder="Pharma commercial analytics" />
+          <ListField rows={2} value={form.industries} onChange={(v) => set("industries", v)} aria-label="Industries" placeholder="Pharma commercial analytics" />
         </Row>
         <Row title="Companies you admire" description="Seeds the suggestions. One per line.">
-          <Textarea rows={2} value={text(form.admired_companies)} onChange={(e) => set("admired_companies", lines(e.target.value))} aria-label="Companies you admire" />
+          <ListField rows={2} value={form.admired_companies} onChange={(v) => set("admired_companies", v)} aria-label="Companies you admire" />
         </Row>
         <Row title="About you" description={readiness?.tier === "quick" ? "Optional. A few sentences on what you do and want next. Used only to steer the search, never to claim experience." : "Optional. Anything the search should know that is not on your resume."}>
           <Textarea rows={3} value={form.about_me} onChange={(e) => set("about_me", e.target.value)} aria-label="About you" />
@@ -149,42 +148,31 @@ export default function PreferencesPage() {
               <Switch checked={form.relocation === "no"} onCheckedChange={(v) => set("relocation", v ? "no" : "yes")} aria-label="I will not relocate" />
               I will not relocate
             </label>
-            {form.relocation === "no" && (
-              <div className="flex flex-wrap items-center gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => setForm((f) => f && { ...f, anchor_cities: ["Milwaukee, WI", "Chicago, IL"], radius_miles: 60 })}
-                >
-                  Use Chicagoland and southeast Wisconsin
-                </Button>
-                <span className="text-xs text-muted-foreground">Sets Milwaukee and Chicago as anchors with a 60 mile radius. Add your home city below.</span>
-              </div>
-            )}
           </div>
         </Row>
         <Row title="Home location" description="City and state, for the distance rule.">
-          <Input value={form.home_location} onChange={(e) => set("home_location", e.target.value)} placeholder="Crystal Lake, IL" aria-label="Home location" className="max-w-xs" />
+          <Input value={form.home_location} onChange={(e) => set("home_location", e.target.value)} placeholder="City, ST" aria-label="Home location" className="max-w-xs" />
         </Row>
         <Row title="Radius (miles)" description="Straight-line distance, not drive time. 0 turns the distance rule off.">
-          <Input type="number" min={0} value={form.radius_miles} onChange={(e) => set("radius_miles", Number(e.target.value) || 0)} aria-label="Radius in miles" className="max-w-32" />
+          <NumberField min={0} fallback={0} value={form.radius_miles} onChange={(v) => set("radius_miles", v)} aria-label="Radius in miles" className="max-w-32" />
         </Row>
         <Row title="Other places you could work" description="Extra anchor cities, such as a second office town. One per line.">
-          <Textarea rows={2} value={text(form.anchor_cities)} onChange={(e) => set("anchor_cities", lines(e.target.value))} aria-label="Other anchor cities" placeholder="Pleasant Prairie, WI" />
+          <ListField rows={2} value={form.anchor_cities} onChange={(v) => set("anchor_cities", v)} aria-label="Other anchor cities" placeholder="Pleasant Prairie, WI" />
         </Row>
         <Row title="Always-allowed cities" description="On-site roles here pass even outside the radius.">
-          <Textarea rows={2} value={text(form.allowed_cities)} onChange={(e) => set("allowed_cities", lines(e.target.value))} aria-label="Allowed cities" placeholder="Chicago, IL" />
+          <ListField rows={2} value={form.allowed_cities} onChange={(v) => set("allowed_cities", v)} aria-label="Allowed cities" placeholder="Chicago, IL" />
         </Row>
         <Row title="States you can work remotely from" description="Remote roles must allow one of these. Comma separated, like IL, WI.">
-          <Input value={form.remote_states.join(", ")} onChange={(e) => set("remote_states", e.target.value.split(",").map((x) => x.trim()).filter(Boolean))} aria-label="Remote states" className="max-w-xs" placeholder="IL" />
+          <ListField single mode="commas" value={form.remote_states} onChange={(v) => set("remote_states", v)} clean={(x) => x.toUpperCase()} aria-label="Remote states" className="max-w-xs" placeholder="IL, WI" />
         </Row>
         <Row title="Base pay floor ($)" description="A posting whose stated top of range is below this is dropped. Postings that state no pay are kept and flagged. 0 turns it off.">
-          <Input type="number" min={0} step={5000} value={form.base_floor} onChange={(e) => set("base_floor", Number(e.target.value) || 0)} aria-label="Base pay floor" className="max-w-40" />
+          <NumberField min={0} step={5000} fallback={0} value={form.base_floor} onChange={(v) => set("base_floor", v)} aria-label="Base pay floor" className="max-w-40" />
         </Row>
         <Row title="Exclusions" description="A posting that mentions any of these is dropped. One per line.">
-          <Textarea rows={3} value={text(form.exclusions)} onChange={(e) => set("exclusions", lines(e.target.value))} aria-label="Exclusions" placeholder={"MD required\nquota carrying"} />
+          <ListField rows={3} value={form.exclusions} onChange={(v) => set("exclusions", v)} aria-label="Exclusions" placeholder={"MD required\nquota carrying"} />
         </Row>
         <Row title="Default recency (days)" description="Older postings may already be in panel interviews. If too few qualify, a run widens to 30 days once and badges the older roles.">
-          <Input type="number" min={1} max={90} value={form.recency_days} onChange={(e) => set("recency_days", Number(e.target.value) || 14)} aria-label="Default recency in days" className="max-w-32" />
+          <NumberField min={1} max={90} fallback={14} value={form.recency_days} onChange={(v) => set("recency_days", v)} aria-label="Default recency in days" className="max-w-32" />
         </Row>
       </Card>
 

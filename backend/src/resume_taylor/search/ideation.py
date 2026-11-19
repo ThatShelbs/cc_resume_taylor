@@ -6,7 +6,7 @@ from resume_taylor.pipeline.prompts import load_skill
 
 from . import claude
 from .candidate import Candidate
-from .normalize import norm_company
+from .normalize import norm_company, same_company
 
 CLUSTERS = {
     "past_peers": "Direct competitors and close peers of past employers",
@@ -51,7 +51,7 @@ def ideate(cand: Candidate, count: int, *, clusters: list[str] | None = None, ex
                 continue
             name = str(it.get("name", "")).strip()
             key = norm_company(name)
-            if not key or key in skip:
+            if not key or key in skip or any(same_company(name, e) for e in exclude or []):
                 continue
             skip.add(key)
             cluster = it.get("cluster") if it.get("cluster") in CLUSTERS else wanted[0]

@@ -14,6 +14,7 @@ from resume_taylor.search.candidate import readiness
 from resume_taylor.search.http import Client
 from resume_taylor.search.ideation import CLUSTERS
 from resume_taylor.search.importer import ImportFailed, import_url
+from resume_taylor.search.normalize import norm_company
 from resume_taylor.search.prefs import COUNTS, DEPTHS, SOURCES, Preferences
 from resume_taylor.search.verify import verify_posting
 
@@ -232,8 +233,7 @@ def latest_suggestions(ctx: Ctx):
     data = store.latest_suggestions()
     if not data:
         return {"exists": False, "companies": []}
-    have = {t["id"] for t in store.targets()}
-    from resume_taylor.search.normalize import norm_company
+    have = {norm_company(t["name"]) for t in store.targets()}
     return {"exists": True, **data, "companies": [c for c in data.get("companies", []) if norm_company(c["name"]) not in have]}
 
 
@@ -241,8 +241,8 @@ def latest_suggestions(ctx: Ctx):
 def accept_suggestions(ctx: Ctx, body: AcceptSuggestionsBody):
     store = store_for(ctx)
     data = store.latest_suggestions() or {}
-    wanted = {n.lower() for n in body.names}
-    picked = [c for c in data.get("companies", []) if c["name"].lower() in wanted]
+    wanted = {norm_company(n) for n in body.names}
+    picked = [c for c in data.get("companies", []) if norm_company(c["name"]) in wanted]
     return store.add_targets(picked, added_by="suggested") if picked else {"added": [], "skipped": [], "over_limit": [], "total": len(store.targets())}
 
 

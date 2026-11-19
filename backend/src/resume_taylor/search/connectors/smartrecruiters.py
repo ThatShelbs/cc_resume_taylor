@@ -14,11 +14,25 @@ def _loc(l: dict) -> str:
 
 
 def list_jobs(client, route: dict, company: str, queries: list[str]) -> list[dict]:
-    out = []
+    """The API searches server-side with `q`, so with role keywords only matching postings are listed."""
+    out: list[dict] = []
+    seen: set[str] = set()
+    for q in (queries or [""])[:4]:
+        _list_query(client, route, company, q, out, seen)
+    return out
+
+
+def _list_query(client, route: dict, company: str, q: str, out: list[dict], seen: set[str]) -> None:
     for page in range(MAX_PAGES):
-        data = client.get_json(API.format(token=route["token"]), params={"limit": PAGE, "offset": page * PAGE})
+        params = {"limit": PAGE, "offset": page * PAGE}
+        if q:
+            params["q"] = q
+        data = client.get_json(API.format(token=route["token"]), params=params)
         items = (data or {}).get("content") or []
         for j in items:
+            if str(j.get("id", "")) in seen:
+                continue
+            seen.add(str(j.get("id", "")))
             loc = j.get("location") or {}
             mode = "remote" if loc.get("remote") else "hybrid" if loc.get("hybrid") else "unknown"
             p = new_posting(
@@ -32,7 +46,6 @@ def list_jobs(client, route: dict, company: str, queries: list[str]) -> list[dic
             out.append(p)
         if len(items) < PAGE:
             break
-    return out
 
 
 def hydrate(client, route: dict, posting: dict) -> dict:

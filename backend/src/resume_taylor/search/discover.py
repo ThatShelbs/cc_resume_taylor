@@ -30,7 +30,7 @@ def main(argv=None) -> int:
     book = RouteBook(args.routes)
     print(f"Looking up careers pages for {len(companies)} companies...")
     results = discover_routes(client, book, companies, force=args.force, model=args.model, effort=args.effort)
-    ok = sum(1 for r in results.values() if r.get("status") == "resolved")
+    ok = sum(1 for r in results.values() if r.get("status") in ("resolved", "empty"))
     print(f"{ok} of {len(companies)} companies connected.")
     if args.out:
         Path(args.out).write_text(json.dumps(results, indent=2), encoding="utf-8")
