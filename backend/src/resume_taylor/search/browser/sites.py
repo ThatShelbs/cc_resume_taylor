@@ -6,8 +6,9 @@ falls back to `claude_extract`, which asks Claude to read the page text and keep
 title and company appear verbatim in that text (nothing is invented)."""
 
 import html as htmllib
+import json
 import re
-from urllib.parse import quote_plus
+from urllib.parse import parse_qs, quote_plus, unquote, urlsplit
 
 from ..claude import ask
 from ..normalize import html_to_text, new_posting, with_pay
@@ -15,15 +16,12 @@ from ..normalize import html_to_text, new_posting, with_pay
 LOGIN = {
     "linkedin": "https://www.linkedin.com/login",
     "indeed": "https://secure.indeed.com/auth",
-    "google": "https://accounts.google.com/",
+    "ziprecruiter": "https://www.ziprecruiter.com/authn/login?realm=candidates",
 }
-# A signed-in page for each site: where the login window waits to see you are in.
-HOME = {
-    "linkedin": "https://www.linkedin.com/feed/",
-    "indeed": "https://www.indeed.com/",
-    "google": "https://www.google.com/",
-}
-SIGNED_IN_URL = {"linkedin": "linkedin.com/feed", "indeed": "indeed.com/", "google": "google.com/"}
+# Part of a signed-in page's URL for each site: where the login window waits to see you are in.
+SIGNED_IN_URL = {"linkedin": "linkedin.com/feed", "indeed": "indeed.com/", "ziprecruiter": "ziprecruiter.com/"}
+
+ZIP_DAYS = (1, 5, 10, 30)  # the "posted within" choices ZipRecruiter accepts
 
 
 def search_url(site: str, query: str, location: str, recency_days: int) -> str:
@@ -33,7 +31,10 @@ def search_url(site: str, query: str, location: str, recency_days: int) -> str:
                 f"&f_TPR=r{recency_days * 86400}&f_E=5%2C6&sortBy=DD")
     if site == "indeed":
         return f"https://www.indeed.com/jobs?q={q}&l={loc}&fromage={recency_days}&sort=date"
-    return f"https://www.google.com/search?q={quote_plus(f'{query} jobs {location}')}&ibp=htl;jobs"
+    if site == "ziprecruiter":
+        days = next((d for d in ZIP_DAYS if d >= recency_days), ZIP_DAYS[-1])
+        return f"https://www.ziprecruiter.com/jobs-search?search={q}&location={loc}&days={days}"
+    raise ValueError(f"unknown site: {site}")
 
 
 def _clean(raw: str) -> str:
@@ -79,16 +80,50 @@ def parse_indeed(markup: str) -> list[dict]:
     return out
 
 
+_ZIP_LD = re.compile(r"<script[^>]+type=[\"']application/ld\+json[\"'][^>]*>(.*?)</script>", re.S | re.I)
+_ZIP_URL = re.compile(r"/c/([^/]+)/Job/([^/]+)/-in-([^?]+)", re.I)
+
+
+def _zip_words(slug: str) -> str:
+    return unquote(slug).replace("-", " ").strip()
+
+
+def parse_ziprecruiter(markup: str) -> list[dict]:
+    """ZipRecruiter puts each result in a schema.org ItemList: the title as `name` and a URL of the form
+    /c/<Company>/Job/<Title>/-in-<City>,<ST>?jid=<id>. Company and place come from that URL."""
+    out, seen = [], set()
+    for block in _ZIP_LD.findall(markup or ""):
+        try:
+            data = json.loads(block.strip())
+        except ValueError:
+            continue
+        if not isinstance(data, dict) or data.get("@type") != "ItemList":
+            continue
+        for item in data.get("itemListElement") or []:
+            url = str((item or {}).get("url", ""))
+            m = _ZIP_URL.search(urlsplit(url).path)
+            jid = (parse_qs(urlsplit(url).query).get("jid") or [""])[0]
+            title = _squash(str(item.get("name", "")))
+            if not (m and jid and title) or jid in seen:
+                continue
+            seen.add(jid)
+            loc = _zip_words(m.group(3)).replace(",", ", ")
+            out.append(new_posting(source="ziprecruiter", company=_zip_words(m.group(1)), title=title, external_id=jid,
+                                   locations=[loc] if loc else [], url=url, apply_url=url, aggregator_only=True))
+    return out
+
+
 def parse_detail(site: str, markup: str) -> str:
     patterns = {
         "linkedin": r'(?:show-more-less-html__markup|jobs-description__content|jobs-box__html-content)[^>]*>(.*?)</div>',
         "indeed": r'id="jobDescriptionText"[^>]*>(.*?)</div>\s*(?:</div>|<div)',
+        "ziprecruiter": r'>Job description</[^>]+>.*?<div[^>]*whitespace-pre-line[^>]*>(.*?)</div>\s*</div>',
     }
     m = re.search(patterns.get(site, "$^"), markup or "", re.S)
     return html_to_text(m.group(1)) if m else ""
 
 
-PARSERS = {"linkedin": parse_linkedin, "indeed": parse_indeed}
+PARSERS = {"linkedin": parse_linkedin, "indeed": parse_indeed, "ziprecruiter": parse_ziprecruiter}
 
 EXTRACT_SYSTEM = (
     "You read the visible text of a job-search results page. Return JSON only: "

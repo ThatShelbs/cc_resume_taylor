@@ -1,18 +1,16 @@
-"""Opt-in structured job-board sources: LinkedIn's public guest endpoints (strictly capped and
+"""Opt-in structured job-board source: LinkedIn's public guest endpoints (strictly capped and
 throttled; they are against LinkedIn's terms and rate-limit silently, so they are off unless the
-user turns them on) and Google Jobs through a SerpAPI key. Both return *hits*: aggregator
-postings that `crosswalk` tries to trace back to the company's own careers page."""
+user turns them on). It returns *hits*: aggregator postings that `crosswalk` tries to trace back
+to the company's own careers page."""
 
 import html as htmllib
 import re
 
-from ..normalize import days_ago_to_iso, html_to_text, new_posting, parse_posted_ago, with_pay
+from ..normalize import html_to_text, new_posting, with_pay
 
 LINKEDIN_SEARCH = "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search"
 LINKEDIN_VIEW = "https://www.linkedin.com/jobs/view/{id}"
 LINKEDIN_MAX_PAGES = 4
-LINKEDIN_MAX_DETAILS = 10
-SERPAPI = "https://serpapi.com/search.json"
 
 _CARD = re.compile(r"<li>(.*?)</li>", re.S)
 
@@ -65,23 +63,3 @@ def linkedin_detail(client, posting: dict) -> dict:
         with_pay(posting, posting["description_text"])
     return posting
 
-
-def serpapi_search(client, api_key: str, query: str, location: str = "") -> list[dict]:
-    data = client.get_json(SERPAPI, params={"engine": "google_jobs", "q": query, "location": location, "api_key": api_key})
-    out = []
-    for j in (data or {}).get("jobs_results", []):
-        ext = j.get("detected_extensions") or {}
-        days = parse_posted_ago(ext.get("posted_at", ""))
-        links = [o.get("link", "") for o in j.get("apply_options") or [] if o.get("link")]
-        text = j.get("description", "")
-        p = new_posting(
-            source="google_jobs", ats="", company=j.get("company_name", ""), title=j.get("title", ""),
-            external_id=j.get("job_id", ""), locations=[j.get("location", "")],
-            work_mode="remote" if ext.get("work_from_home") else "unknown",
-            posted_at=days_ago_to_iso(days) if days is not None else None, posted_at_source="parsed" if days is not None else "",
-            url=links[0] if links else "", apply_url=links[0] if links else "", description_text=text, aggregator_only=True,
-        )
-        p["apply_links"] = links
-        p["pay_text"] = ext.get("salary", "")
-        out.append(with_pay(p, ext.get("salary", "") or text))
-    return out

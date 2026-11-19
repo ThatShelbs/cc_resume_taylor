@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException
 
 from resume_taylor.pipeline.parsing import parse_applicant_info, parse_prior_resume, parse_profile_skills
 from resume_taylor.search import freshness
-from resume_taylor.search.browser.state import LABELS, SITES, AccountState, profile_dir
+from resume_taylor.search.browser.state import LABELS, RETIRED_SITES, SITES, AccountState, profile_dir
 from resume_taylor.search.candidate import readiness
 from resume_taylor.search.http import Client
 from resume_taylor.search.ideation import CLUSTERS
@@ -32,13 +32,13 @@ from ..schemas import (
 )
 from ..services import pipeline_runner
 from ..services.jobs import Job
-from ..storage import credentials
 from ..storage.fs import atomic_write_text, remove_tree
 from ..storage.job_search import MAX_TARGETS, JobSearchError, JobSearchStore
 
 router = APIRouter(prefix="/api/job-search", tags=["job-search"])
 
 DEPTH_TIMEOUT = {"quick": 900, "standard": 1800, "deep": 3600}
+ACCOUNT_SITE_TIMEOUT = 420  # extra seconds per signed-in site: up to 10 human-paced searches plus detail pages
 COLUMNS = ["prospect", "interested", "tailoring", "resume_ready", "applied", "interviewing", "offer", "closed"]
 
 
@@ -82,8 +82,8 @@ def get_readiness(ctx: Ctx):
         "tier": _tier(ctx),
         "has_profile": bool(pp), "has_resume": bool(rp), "has_fact_bank": ctx.paths.fact_bank_path.exists(),
         "targets": len(store.targets()), "max_targets": MAX_TARGETS,
-        "new_strong": store.count_new_strong(), "serpapi": credentials.serp_status(ctx.paths.secrets_path),
-        "accounts": [_accounts(ctx).status(s) for s in SITES],
+        "new_strong": store.count_new_strong(),
+        "accounts": _account_statuses(ctx),
         "options": {"counts": list(COUNTS), "depths": list(DEPTHS), "sources": list(SOURCES), "clusters": CLUSTERS},
     }
 
@@ -95,10 +95,18 @@ def _accounts(ctx) -> AccountState:
     return AccountState(ctx.paths.job_search_dir / "accounts.json")
 
 
+def _account_statuses(ctx) -> list[dict]:
+    st = _accounts(ctx)
+    for site in (*st.forget_retired(), *RETIRED_SITES):  # sites the app no longer supports (Google Jobs)
+        prof = profile_dir(ctx.paths.job_search_dir, site)
+        if prof.exists():
+            remove_tree(prof)
+    return [st.status(s) for s in SITES]
+
+
 @router.get("/accounts")
 def get_accounts(ctx: Ctx):
-    st = _accounts(ctx)
-    return {"accounts": [st.status(s) for s in SITES]}
+    return {"accounts": _account_statuses(ctx)}
 
 
 @router.post("/accounts/{site}/connect")
@@ -292,7 +300,8 @@ def start_search(ctx: Ctx, body: SearchBody):
         merged = store.merge_run(report, run_id)
         job.result = {"run_id": run_id, "found": len(report.get("results", [])), **merged}
 
-    return _submit_search_job(ctx, "job_search", f"Searching for your top {body.count}", args, DEPTH_TIMEOUT[depth], on_success)
+    timeout = DEPTH_TIMEOUT[depth] + ACCOUNT_SITE_TIMEOUT * sum(1 for x in sources if x.endswith("_account"))
+    return _submit_search_job(ctx, "job_search", f"Searching for your top {body.count}", args, timeout, on_success)
 
 
 @router.get("/runs")

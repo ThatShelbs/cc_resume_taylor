@@ -4,12 +4,14 @@ network or wait."""
 
 import hashlib
 import json
+import ssl
 import threading
 import time
 from pathlib import Path
 from urllib import robotparser
 from urllib.parse import urlsplit
 
+import certifi
 import httpx
 
 USER_AGENT = "ResumeTaylor/1.0 (personal job search; respects robots.txt)"
@@ -17,6 +19,21 @@ CACHE_TTL = 24 * 3600
 DEFAULT_INTERVAL = 1.0
 HOST_INTERVALS = {"www.linkedin.com": 4.0}
 MAX_RETRIES = 2
+
+
+class _NoAlpnContext(ssl.SSLContext):
+    """TLS without ALPN, the handshake Python's own urllib makes. httpx always offers ALPN
+    'http/1.1', and Cloudflare in front of many careers sites (every Workday board among them)
+    answers that handshake with 429 on the first request. Certificates are verified as usual."""
+
+    def set_alpn_protocols(self, protocols):  # noqa: D401 - deliberately leaves ALPN out
+        return None
+
+
+def tls_context() -> ssl.SSLContext:
+    ctx = _NoAlpnContext(ssl.PROTOCOL_TLS_CLIENT)
+    ctx.load_verify_locations(certifi.where())
+    return ctx
 
 
 class Client:
@@ -30,6 +47,7 @@ class Client:
     ):
         self._http = httpx.Client(
             transport=transport,
+            verify=tls_context(),
             timeout=timeout,
             follow_redirects=True,
             headers={"User-Agent": USER_AGENT, "Accept": "application/json, text/html;q=0.9, */*;q=0.5"},

@@ -13,14 +13,26 @@ leads back to them. You have web search and web fetch.
 
 1. For each company, find its **official** careers or jobs page. Official means the company's
    own domain, or the hosted board of its applicant-tracking system (Greenhouse, Lever, Ashby,
-   Workday, SmartRecruiters, Workable, Eightfold, iCIMS, Phenom, SuccessFactors).
-2. Return `careers_url` (the page a person would browse) and, when you can see it, `ats_url`
-   (the ATS board itself, for example `https://boards.greenhouse.io/acme` or
-   `https://acme.wd5.myworkdayjobs.com/AcmeCareers`). Open the page to confirm; do not guess.
-3. **Never** return Indeed, LinkedIn, Glassdoor, ZipRecruiter, Google Jobs, Built In or any
-   other aggregator or job board as the answer. If you cannot find an official page, leave the
-   fields empty and say why in `notes`.
-4. Watch for look-alikes: same name, different company (a different industry or country). Match
+   Workday, SmartRecruiters, Workable, Eightfold, Recruitee, BambooHR, Teamtailor, Breezy, Rippling,
+   iCIMS, Phenom, SuccessFactors, Jobvite).
+2. Return three fields, each only when you opened the page and saw it (never guess a URL):
+   - `careers_url`: the careers page **on the company's own domain** that a person would open,
+     for example `https://www.pfizer.com/about/careers` or
+     `https://www.google.com/about/careers/applications/`. Prefer this over the ATS board, even
+     when the company's jobs are hosted on an ATS.
+   - `ats_url`: the ATS board itself, when there is one, for example
+     `https://boards.greenhouse.io/acme` or `https://pfizer.wd1.myworkdayjobs.com/PfizerCareers`.
+     The careers page usually links to it ("Search jobs", "View open roles").
+   - `search_url`: when the company's own site has a job search, the results URL with the
+     keywords replaced by `{q}` (and the place by `{location}` if the site takes one), for example
+     `https://www.google.com/about/careers/applications/jobs/results?q={q}&location={location}`.
+     Leave it empty for an ATS board or when the site has no search URL.
+3. When a company's job board is already known and you are asked only for its careers page,
+   still return `careers_url` (and `search_url` if there is one) and leave `ats_url` empty.
+4. **Never** return Indeed, LinkedIn, Glassdoor, ZipRecruiter, Robert Half, Google Jobs, Built In or
+   any other aggregator, job board or staffing agency as the answer. If you cannot find an official
+   page, leave the fields empty and say why in `notes`.
+5. Watch for look-alikes: same name, different company (a different industry or country). Match
    on the company the person actually means, using the clues given.
 
 ## Task: SWEEP (find leads on job boards)

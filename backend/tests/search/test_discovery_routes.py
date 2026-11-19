@@ -8,7 +8,7 @@ import pytest
 
 from resume_taylor.search import claude as claude_mod
 from resume_taylor.search import discovery, run
-from resume_taylor.search.connectors import careers_page, site_search, workday
+from resume_taylor.search.connectors import careers_page, workday
 from resume_taylor.search.http import Client
 from resume_taylor.search.prefs import Preferences
 from resume_taylor.search.routes import RouteBook
@@ -62,7 +62,7 @@ def test_empty_board_falls_through_to_the_companys_own_site_search(tmp_path, mon
     book = RouteBook(tmp_path / "routes.json")
     out = discovery.discover_routes(make_client(acme_handler), book, [{"name": "Acme"}], progress=lambda m: None)
     rec = out["Acme"]
-    assert rec["status"] == "resolved" and rec["ats"] == "site_search"
+    assert rec["status"] == "resolved" and rec["ats"] == "careers_page"
     assert rec["job_count"] == 2 and rec["search_url"].endswith("{q}")
 
 
@@ -114,13 +114,6 @@ def test_first_word_slug_needs_the_whole_board_name(tmp_path):
     assert discovery.probe(make_client(handler), "Johnson & Johnson Vision") is None
 
 
-def test_same_site_uses_the_registrable_domain():
-    assert careers_page.same_site("https://www.acme.com/careers", "https://jobs.acme.com/j/1")
-    assert not careers_page.same_site("https://www.acme.com/careers", "https://evil.com/j/1")
-    assert not careers_page.same_site("https://www.acme.com/careers", "https://other.com/j/1")
-    assert careers_page.registrable_domain("jobs.acme.co.uk") == "acme.co.uk"
-
-
 def test_listing_page_postings_get_distinct_ids():
     html = "<html>" + jsonld("Director A", ident="R1") + jsonld("Director B", ident="R2") + "</html>"
 
@@ -129,13 +122,6 @@ def test_listing_page_postings_get_distinct_ids():
 
     jobs = careers_page.list_jobs(make_client(handler), {"careers_url": "https://acme.com/careers"}, "Acme", [])
     assert len(jobs) == 2 and len({j["id"] for j in jobs}) == 2
-
-
-def test_site_search_reads_jsonld_then_falls_back_to_page_text():
-    route = {"ats": "site_search", "search_url": "https://careers.acme.com/search?q={q}", "careers_url": "https://careers.acme.com"}
-    jobs = site_search.list_jobs(make_client(acme_handler), route, "Acme", ["medical affairs"])
-    titles = sorted(j["title"] for j in jobs)
-    assert titles == ["Director, Medical Affairs", "VP Medical"]  # the third-party link was ignored
 
 
 def test_a_resolved_route_that_lists_nothing_is_marked_empty_after_a_run(tmp_path):

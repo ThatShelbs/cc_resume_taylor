@@ -41,22 +41,3 @@ def delete_api_key(ctx: Ctx):
     credentials.clear_key(ctx.paths.secrets_path)
     return credentials.status(ctx.paths.secrets_path)
 
-
-@router.get("/serpapi-key")
-def get_serp_key(ctx: Ctx):
-    return credentials.serp_status(ctx.paths.secrets_path)
-
-
-@router.put("/serpapi-key")
-def put_serp_key(ctx: Ctx, body: ApiKeyBody):
-    try:
-        credentials.save_serp_key(ctx.paths.secrets_path, body.key)
-    except credentials.BadKey as exc:
-        raise HTTPException(400, str(exc)) from None
-    return credentials.serp_status(ctx.paths.secrets_path)
-
-
-@router.delete("/serpapi-key")
-def delete_serp_key(ctx: Ctx):
-    credentials.clear_serp_key(ctx.paths.secrets_path)
-    return credentials.serp_status(ctx.paths.secrets_path)

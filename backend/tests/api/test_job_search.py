@@ -1,7 +1,6 @@
 """Job search API: targets, suggestion and search jobs (fake engine scripts), the postings
 lifecycle, tailoring from a posting, and the unified board."""
 
-import json
 import textwrap
 import time
 
@@ -217,11 +216,35 @@ def test_preferences_roundtrip_normalizes(js):
     assert js.get("/api/job-search/preferences").json()["base_floor"] == 225000
 
 
-def test_serpapi_key_is_never_returned(js):
-    key = "a" * 64
-    assert js.put("/api/settings/serpapi-key", json={"key": key}).json() == {"set": True, "last4": "aaaa"}
-    assert key not in js.get("/api/job-search/readiness").text
-    assert js.put("/api/settings/api-key", json={"key": "sk-ant-" + "x" * 30}).status_code == 200
-    assert js.get("/api/settings/serpapi-key").json()["set"]  # saving the other key keeps this one
-    assert not js.delete("/api/settings/serpapi-key").json()["set"]
-    assert json.loads(js.app.state.ctx.paths.secrets_path.read_text())["anthropic_api_key"].startswith("sk-ant-")
+def test_google_jobs_and_serpapi_are_gone(js):
+    assert js.get("/api/settings/serpapi-key").status_code in (404, 405)
+    ready = js.get("/api/job-search/readiness").json()
+    assert "serpapi" not in ready
+    assert not {"google", "google_account"} & set(ready["options"]["sources"])
+    assert [a["site"] for a in ready["accounts"]] == ["linkedin", "indeed", "ziprecruiter"]
+    assert {"roberthalf", "ziprecruiter_account"} <= set(ready["options"]["sources"])
+
+
+def test_retired_google_profile_is_cleaned_up(js):
+    jsdir = js.app.state.ctx.paths.job_search_dir
+    (jsdir / "browser_profile" / "google").mkdir(parents=True)
+    (jsdir / "accounts.json").write_text('{"google": {"connected_at": "2026-11-01T00:00:00+00:00"}}')
+    accounts = js.get("/api/job-search/accounts").json()["accounts"]
+    assert "google" not in {a["site"] for a in accounts}
+    assert not (jsdir / "browser_profile" / "google").exists()
+    assert "google" not in (jsdir / "accounts.json").read_text()
+
+
+def test_search_timeout_grows_with_signed_in_sites(js, monkeypatch):
+    from resume_taylor.api.routers import job_search as jsr
+
+    seen = {}
+
+    def fake_submit(ctx, kind, label, args, timeout, on_success=None):
+        seen["timeout"] = timeout
+        return {"id": "x"}
+
+    monkeypatch.setattr(jsr, "_submit_search_job", fake_submit)
+    r = js.post("/api/job-search/search", json={"count": 5, "depth": "quick", "sources": ["boards", "linkedin_account", "ziprecruiter_account"]})
+    assert r.status_code == 200, r.text
+    assert seen["timeout"] == jsr.DEPTH_TIMEOUT["quick"] + 2 * jsr.ACCOUNT_SITE_TIMEOUT
