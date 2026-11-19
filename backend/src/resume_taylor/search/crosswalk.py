@@ -48,7 +48,7 @@ def find_match(hit: dict, pool: list[dict]) -> dict | None:
 
 
 def route_from_links(hit: dict) -> dict | None:
-    """A Google Jobs hit often carries the employer's own apply link; its host can name the ATS."""
+    """A board hit whose apply link points at the employer's own site: its host can name the ATS."""
     for link in hit.get("apply_links", []) or [hit.get("apply_url", "")]:
         route = fingerprint(link)
         if route:

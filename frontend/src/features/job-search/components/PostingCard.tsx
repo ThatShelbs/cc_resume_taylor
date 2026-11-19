@@ -61,7 +61,11 @@ export function PostingCard({
           <div className="flex flex-wrap items-center gap-1.5">
             {posting.is_new && <Badge variant="success">New</Badge>}
             <Badge variant={fresh.variant} title={posting.freshness_note}>{fresh.label}</Badge>
-            {posting.aggregator_only ? (
+            {posting.agency ? (
+              <Badge variant="outline" title={`${posting.agency}'s own posting. The hiring company is usually not named; you apply through ${posting.agency}.`}>
+                Staffing agency{posting.employment_type ? `: ${posting.employment_type}` : ""}
+              </Badge>
+            ) : posting.aggregator_only ? (
               <Badge variant="outline" title="Found on a job board only; the company's own posting was not located.">Board lead</Badge>
             ) : posting.also_listed_on.length ? (
               <Badge variant="secondary">Also on {posting.also_listed_on.join(", ")}</Badge>
@@ -165,6 +169,7 @@ export function PostingCard({
         <Button asChild size="sm" variant="ghost">
           <a href={posting.apply_url || posting.url} target="_blank" rel="noreferrer"><ExternalLink /> Open posting</a>
         </Button>
+        <CareersLink posting={posting} />
         <Button size="sm" variant="ghost" onClick={() => verify.mutate()} loading={verify.isPending}>
           <RefreshCw /> Re-verify
         </Button>
@@ -173,5 +178,20 @@ export function PostingCard({
         )}
       </div>
     </Card>
+  );
+}
+
+/** The company's own careers page: for a board lead, where to look for (and apply to) the same role directly. */
+export function CareersLink({ posting }: { posting: Posting }) {
+  if (posting.agency) return null;
+  const lead = posting.aggregator_only;
+  const href = (lead && posting.company_search_url) || posting.company_careers_url;
+  if (!href) return null;
+  return (
+    <Button asChild size="sm" variant="ghost">
+      <a href={href} target="_blank" rel="noreferrer" title={lead ? "Apply on the company's own site when the role is listed there" : undefined}>
+        <Building2 /> {lead ? `Look for it on ${posting.company}'s site` : "Company careers page"}
+      </a>
+    </Button>
   );
 }

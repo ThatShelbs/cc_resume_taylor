@@ -1,9 +1,15 @@
 """Find how to pull a company's postings straight from its careers page.
 
-Per company, in order: (1) fingerprint a known careers URL, (2) probe the public board APIs
-with slug variants of the name (accepted only when the board plainly belongs to that company),
-(3) ask Claude, with web tools and the career-page-discovery skill, for the careers URL and
-ATS board of whatever is still unresolved. Every route is validated by pulling its job list."""
+Per company, in order: (1) fingerprint a known careers URL: its address, its HTML, the page behind
+its "Search jobs" link, and for a page built by JavaScript one headless render of it; (2) probe the
+public board APIs with slug variants of the name (accepted only when the board plainly belongs to
+that company); (3) ask Claude, with web tools and the career-page-discovery skill, for the careers
+URL, ATS board and search URL of whatever is still unresolved. Every route is validated by pulling
+its job list.
+
+Every route keeps the company's own careers page (`careers_url`) next to the ATS board
+(`board_url`), so results can always link a person straight to the company. Routes found without a
+careers page get one looked up once (`careers_url_checked`)."""
 
 import re
 from concurrent.futures import ThreadPoolExecutor
@@ -14,9 +20,10 @@ from resume_taylor.pipeline.prompts import load_skill
 from resume_taylor.pipeline.runtime import warn
 
 from . import claude
-from .connectors import connector_for
+from . import render as rendering
+from .connectors import EMPTY_OK, connector_for
 from .normalize import norm_company
-from .routes import RouteBook
+from .routes import RouteBook, is_company_page
 
 _PATTERNS = [
     ("greenhouse", re.compile(r"(?:boards|job-boards)(?:\.eu)?\.greenhouse\.io/(?:embed/job_board\?for=)?([A-Za-z0-9_-]+)", re.I)),
@@ -25,12 +32,17 @@ _PATTERNS = [
     ("ashby", re.compile(r"jobs\.ashbyhq\.com/([A-Za-z0-9_.%-]+)", re.I)),
     ("smartrecruiters", re.compile(r"(?:careers|jobs)\.smartrecruiters\.com/([A-Za-z0-9_-]+)", re.I)),
     ("workable", re.compile(r"apply\.workable\.com/([A-Za-z0-9_-]+)", re.I)),
+    ("recruitee", re.compile(r"([A-Za-z0-9-]+)\.recruitee\.com", re.I)),
+    ("bamboohr", re.compile(r"([A-Za-z0-9-]+)\.bamboohr\.com/(?:careers|jobs)", re.I)),
+    ("breezy", re.compile(r"([A-Za-z0-9-]+)\.breezy\.hr", re.I)),
+    ("rippling", re.compile(r"ats\.rippling\.com/(?:api/v2/board/)?([A-Za-z0-9_-]+)", re.I)),
 ]
+_TEAMTAILOR = re.compile(r"([A-Za-z0-9-]+\.teamtailor\.com)", re.I)
 _WORKDAY = re.compile(
     r"([A-Za-z0-9-]+)\.(wd\d+)\.myworkdayjobs\.com/(?:[a-z]{2}(?:-[A-Z]{2})?/)?([A-Za-z0-9_-]+)", re.I
 )
 _EIGHTFOLD = re.compile(r"([A-Za-z0-9-]+\.eightfold\.ai)", re.I)
-_RESERVED = {"embed", "v1", "api", "jobs", "careers", "en", "wday"}
+_RESERVED = {"embed", "v1", "api", "jobs", "careers", "en", "wday", "www", "app", "help", "assets", "cdn", "static"}
 
 
 def fingerprint(text: str) -> dict | None:
@@ -46,6 +58,9 @@ def fingerprint(text: str) -> dict | None:
             token = m.group(1)
             if token.lower() not in _RESERVED:
                 return {"ats": ats, "token": token}
+    m = _TEAMTAILOR.search(text)
+    if m and m.group(1).split(".")[0].lower() not in _RESERVED:
+        return {"ats": "teamtailor", "host": m.group(1).lower()}
     m = _EIGHTFOLD.search(text)
     if m:
         dom = parse_qs(urlsplit(text).query).get("domain") or re.findall(r"domain=([A-Za-z0-9.-]+)", text)
@@ -93,6 +108,9 @@ def probe(client, company: str) -> tuple[dict, int] | None:
         sr = client.get_json(f"https://api.smartrecruiters.com/v1/companies/{slug}/postings", params={"limit": 1})
         if sr and sr.get("content") and _name_matches((sr["content"][0].get("company") or {}).get("name", ""), company):
             return {"ats": "smartrecruiters", "token": slug}, -1
+        rc = client.get_json(f"https://{slug}.recruitee.com/api/offers/")
+        if rc and rc.get("offers") and _name_matches(rc["offers"][0].get("company_name", ""), company):
+            return {"ats": "recruitee", "token": slug}, -1
         if exact:  # these two APIs do not name the company, so only trust the unambiguous slug
             for mod, ats in ((lever, "lever"), (ashby, "ashby")):
                 if client.get_json(mod.API.format(token=slug), params={"mode": "json"} if ats == "lever" else None):
@@ -109,15 +127,49 @@ def validate(client, route: dict, company: str) -> int | None:
         jobs = conn.list_jobs(client, route, company, [""] if route["ats"] in ("workday", "eightfold") else [])
     except (KeyError, ValueError, TypeError):
         return None
-    return len(jobs) if jobs or route["ats"] in ("greenhouse", "lever", "ashby", "workable", "smartrecruiters") else None
+    return len(jobs) if jobs or route["ats"] in EMPTY_OK else None
+
+
+def _fingerprint_page(url: str, html: str, links: list[str]) -> dict | None:
+    route = fingerprint(html or "") or fingerprint(" ".join(links))
+    if not route and "teamtailor-cdn" in (html or ""):  # a Teamtailor site on the company's own domain
+        route = {"ats": "teamtailor", "host": urlsplit(url).netloc.lower()}
+    return route
+
+
+def fingerprint_careers_page(client, careers_url: str) -> dict | None:
+    """The ATS behind a careers page: its URL, its HTML, the page its 'Search jobs' link opens, and,
+    when the page is built by JavaScript, the same checks on one headless render."""
+    route = fingerprint(careers_url)
+    if route or not client.allowed_by_robots(careers_url):
+        return route
+    html = client.get_text(careers_url, robots=True) or ""
+    anchors = rendering.static_anchors(html, careers_url)
+    route = _fingerprint_page(careers_url, html, [h for h, _ in anchors])
+    for link in ([] if route else rendering.job_search_links(anchors)):
+        route = fingerprint(link) or (_fingerprint_page(link, client.get_text(link, robots=True) or "", [])
+                                      if client.allowed_by_robots(link) else None)
+        if route:
+            return route
+    if route:
+        return route
+    page = rendering.render(careers_url)
+    if not page:
+        return None
+    route = _fingerprint_page(page.url, page.html, [h for h, _ in page.anchors] + page.frames)
+    for link in ([] if route else rendering.job_search_links(page.anchors)):
+        route = fingerprint(link)
+        if not route and client.allowed_by_robots(link):
+            inner = rendering.render(link)
+            route = _fingerprint_page(link, inner.html, [h for h, _ in inner.anchors] + inner.frames) if inner else None
+        if route:
+            break
+    return route
 
 
 def _resolve_deterministic(client, company: str, careers_url: str) -> tuple[dict, str] | None:
     if careers_url:
-        route = fingerprint(careers_url)
-        if not route:
-            html = client.get_text(careers_url, robots=True)
-            route = fingerprint(html or "")
+        route = fingerprint_careers_page(client, careers_url)
         if route:
             return route, "fingerprint"
     found = probe(client, company)
@@ -131,10 +183,13 @@ def discover_routes(client, book: RouteBook, companies: list[dict], *, force: bo
     """companies: [{name, careers_url?}]. Fills `book`; returns {name: route record}."""
     results: dict[str, dict] = {}
     todo = []
+    backfill: list[dict] = []
     for c in companies:
         existing = book.usable(c["name"])
         if existing and not force and not (c.get("careers_url") and existing.get("careers_url") != c["careers_url"]):
             results[c["name"]] = existing
+            if not existing.get("careers_url") and not existing.get("careers_url_checked"):
+                backfill.append(c)
         else:
             todo.append(c)
 
@@ -153,36 +208,51 @@ def discover_routes(client, book: RouteBook, companies: list[dict], *, force: bo
                 route, method, count = found
                 results[c["name"]] = book.set(c["name"], {**route, "careers_url": c.get("careers_url", "")}, method=method, job_count=count)
                 progress(f"{c['name']}: {route['ats']}, {count} postings")
+                if not c.get("careers_url"):
+                    backfill.append(c)
             else:
                 pending.append(c)
 
-    # Claude, with web tools, for what the deterministic steps could not place.
-    if pending:
+    # Claude, with web tools, for what the deterministic steps could not place, plus the careers
+    # page of companies whose job board was found without one.
+    todo_claude = [(c, False) for c in pending] + [(c, True) for c in backfill]
+    if todo_claude:
         rules = load_skill(CAREER_DISCOVERY_SKILL_PATH)
-        for i in range(0, len(pending), 10):
-            batch = pending[i:i + 10]
-            listing = "\n".join(f"- {c['name']}" + (f" (careers page: {c['careers_url']})" if c.get("careers_url") else "") for c in batch)
+        for i in range(0, len(todo_claude), 10):
+            batch = todo_claude[i:i + 10]
+            listing = "\n".join(f"- {c['name']}" + (f" (careers page: {c['careers_url']})" if c.get("careers_url") else "")
+                                + (f" (job board already known: {results[c['name']].get('board_url', '')})" if only else "")
+                                for c, only in batch)
             reply = claude.ask(
-                rules + "\n\nTask: DISCOVER. Reply with JSON only: {\"companies\": [{\"name\": str, \"careers_url\": str, \"ats_url\": str, \"notes\": str}]}.",
+                rules + "\n\nTask: DISCOVER. Reply with JSON only: {\"companies\": [{\"name\": str, \"careers_url\": str, "
+                "\"ats_url\": str, \"search_url\": str, \"notes\": str}]}.",
                 f"Find the official careers page and applicant-tracking board for each company:\n{listing}",
                 tools=claude.WEB_TOOLS, model=model, effort=effort, label="Career-page discovery",
             )
             by_name = {norm_company(x.get("name", "")): x for x in (reply or {}).get("companies", []) if isinstance(x, dict)}
-            for c in batch:
+            for c, only in batch:
                 hit = by_name.get(norm_company(c["name"]), {})
-                url = hit.get("careers_url") or c.get("careers_url") or ""
-                route = fingerprint(hit.get("ats_url", "")) or fingerprint(url)
+                found_url = str(hit.get("careers_url") or "").strip()
+                found_url = found_url if is_company_page(found_url) else ""
+                search = _search_template(str(hit.get("search_url") or ""), found_url or c.get("careers_url", ""))
+                if only:  # the board is known; keep only the careers page (and its search link) Claude found
+                    rec = results[c["name"]]
+                    rec.update({"careers_url": found_url or rec.get("careers_url", ""), "careers_url_checked": True})
+                    if search:
+                        rec["search_url"] = search
+                    continue
+                url = c.get("careers_url") or found_url
+                route = fingerprint(hit.get("ats_url", "")) or (fingerprint_careers_page(client, url) if url else None)
                 method = "claude"
-                if not route and url:
-                    route = fingerprint(client.get_text(url, robots=True) or "")
                 if route:
                     count = validate(client, route, c["name"])
                     if count is not None:
-                        results[c["name"]] = book.set(c["name"], {**route, "careers_url": url}, method=method, job_count=count)
+                        extra = {"careers_url": url, **({"search_url": search} if search else {})}
+                        results[c["name"]] = book.set(c["name"], {**route, **extra}, method=method, job_count=count)
                         progress(f"{c['name']}: {route['ats']}, {count} postings")
                         continue
                 if url:
-                    route = {"ats": "careers_page", "careers_url": url}
+                    route = {"ats": "careers_page", "careers_url": url, **({"search_url": search} if search else {})}
                     count = validate(client, route, c["name"])
                     if count:
                         results[c["name"]] = book.set(c["name"], route, method="claude", job_count=count,
@@ -194,3 +264,11 @@ def discover_routes(client, book: RouteBook, companies: list[dict], *, force: bo
                 warn(f"No postings route found for {c['name']}.")
     book.save()
     return results
+
+
+def _search_template(template: str, careers_url: str) -> str:
+    """A careers-site search URL with {q}, kept only when it is on the company's own site."""
+    t = template.strip()
+    if "{q}" not in t or not is_company_page(t) or not careers_url:
+        return ""
+    return t if rendering.site_of(t) == rendering.site_of(careers_url) else ""

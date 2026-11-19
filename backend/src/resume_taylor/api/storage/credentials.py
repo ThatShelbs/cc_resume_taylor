@@ -63,38 +63,6 @@ def clear_key(path: Path) -> None:
     _write(path, data)
 
 
-# The optional SerpAPI key (Google Jobs in the job search). Same file, same rules.
-SERP_PATTERN = re.compile(r"^[A-Za-z0-9]{32,80}$")
-SERP_REDACT = re.compile(r"\b[a-f0-9]{64}\b")
-
-
-def clean_serp_key(raw: str) -> str:
-    key = (raw or "").strip().strip('"').strip("'")
-    if not SERP_PATTERN.match(key):
-        raise BadKey("That doesn't look like a SerpAPI key. It is a long run of letters and numbers with no spaces.")
-    return key
-
-
-def load_serp_key(path: Path) -> str | None:
-    key = _read(path).get("serpapi_key", "")
-    return key if isinstance(key, str) and SERP_PATTERN.match(key) else None
-
-
-def save_serp_key(path: Path, raw: str) -> None:
-    _write(path, {**_read(path), "serpapi_key": clean_serp_key(raw)})
-
-
-def clear_serp_key(path: Path) -> None:
-    data = _read(path)
-    data.pop("serpapi_key", None)
-    _write(path, data)
-
-
-def serp_status(path: Path) -> dict:
-    key = load_serp_key(path)
-    return {"set": bool(key), "last4": key[-4:] if key else None}
-
-
 def status(path: Path) -> dict:
     """What the UI may know: whether a key is set, where from, and its tail."""
     key = load_key(path)
@@ -107,4 +75,4 @@ def status(path: Path) -> dict:
 
 
 def redact(text: str) -> str:
-    return SERP_REDACT.sub("***", REDACT_PATTERN.sub("sk-ant-***", text))
+    return REDACT_PATTERN.sub("sk-ant-***", text)

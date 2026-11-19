@@ -10,7 +10,7 @@ from pathlib import Path
 
 from resume_taylor.search.normalize import norm_company
 from resume_taylor.search.prefs import Preferences, load_prefs
-from resume_taylor.search.routes import RouteBook
+from resume_taylor.search.routes import RouteBook, board_url
 
 from .fs import atomic_write_text
 
@@ -91,6 +91,7 @@ class JobSearchStore:
             out.append({**t, "route": {
                 "status": r.get("status", "unresolved"), "ats": r.get("ats", ""), "job_count": r.get("job_count"),
                 "verified_at": r.get("verified_at"), "note": r.get("note", ""), "careers_url": r.get("careers_url", ""),
+                "board_url": r.get("board_url") or board_url(r), "search_url": r.get("search_url", ""),
             }})
         return out
 

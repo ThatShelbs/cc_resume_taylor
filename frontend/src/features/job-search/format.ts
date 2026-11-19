@@ -49,11 +49,11 @@ export const SOURCE_LABELS: Record<string, string> = {
   targets: "My target companies",
   ideated: "Ideated companies",
   boards: "Job board sweep",
+  roberthalf: "Robert Half",
   linkedin: "LinkedIn direct",
-  google: "Google Jobs",
   linkedin_account: "LinkedIn (my account)",
   indeed_account: "Indeed (my account)",
-  google_account: "Google Jobs (my account)",
+  ziprecruiter_account: "ZipRecruiter (my browser)",
 };
 
 export const REJECTION_LABELS: Record<string, string> = {
@@ -79,7 +79,8 @@ export const DISMISS_REASONS: { value: string; label: string }[] = [
 export function atsLabel(ats: string): string {
   const names: Record<string, string> = {
     greenhouse: "Greenhouse", lever: "Lever", ashby: "Ashby", workday: "Workday", smartrecruiters: "SmartRecruiters",
-    workable: "Workable", eightfold: "Eightfold", careers_page: "Careers page",
+    workable: "Workable", eightfold: "Eightfold", recruitee: "Recruitee", bamboohr: "BambooHR", teamtailor: "Teamtailor",
+    breezy: "Breezy HR", rippling: "Rippling", careers_page: "Careers page", roberthalf: "Robert Half",
   };
   return names[ats] ?? ats;
 }

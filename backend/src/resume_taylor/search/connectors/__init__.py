@@ -8,12 +8,32 @@
 A route is a small dict, e.g. {"ats": "greenhouse", "token": "acme"}. Postings follow
 `normalize.new_posting`. Connectors never raise on network trouble; they return what they got."""
 
-from . import ashby, careers_page, eightfold, greenhouse, lever, smartrecruiters, workable, workday
+from . import (
+    ashby,
+    bamboohr,
+    breezy,
+    careers_page,
+    eightfold,
+    greenhouse,
+    lever,
+    recruitee,
+    rippling,
+    roberthalf,
+    smartrecruiters,
+    teamtailor,
+    workable,
+    workday,
+)
 
 CONNECTORS = {
     m.NAME: m
-    for m in (greenhouse, lever, ashby, workday, smartrecruiters, workable, eightfold, careers_page)
+    for m in (greenhouse, lever, ashby, workday, smartrecruiters, workable, eightfold, recruitee, bamboohr, teamtailor,
+              breezy, rippling, careers_page, roberthalf)
 }
+
+# ATS boards with a public JSON list: an empty list is still a valid board (the company is just not hiring).
+EMPTY_OK = ("greenhouse", "lever", "ashby", "workable", "smartrecruiters", "recruitee", "bamboohr", "teamtailor", "breezy",
+            "rippling")
 
 
 def connector_for(route: dict):

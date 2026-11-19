@@ -2,18 +2,25 @@
 
 export type Tier = "full" | "partial" | "quick";
 export type Depth = "quick" | "standard" | "deep";
-export type Source = "targets" | "ideated" | "boards" | "linkedin" | "google" | "linkedin_account" | "indeed_account" | "google_account";
-export type AccountSite = "linkedin" | "indeed" | "google";
+export type Source =
+  | "targets" | "ideated" | "boards" | "roberthalf" | "linkedin"
+  | "linkedin_account" | "indeed_account" | "ziprecruiter_account";
+export type AccountSite = "linkedin" | "indeed" | "ziprecruiter";
 export interface AccountStatus {
   site: AccountSite;
   label: string;
   connected: boolean;
+  /** The site's job search works without signing in (signing in is still offered). */
+  login_optional: boolean;
+  /** Usable in the next search: signed in (or login optional) and not paused. */
+  ready: boolean;
   connected_at: string | null;
   last_used: string | null;
   cooldown_until: string | null;
   cooldown_reason: string;
-  used_today: { search: number; detail: number };
-  caps: { search: number; detail: number };
+  /** Per search run; there is no daily cap. */
+  budget: { search: number; detail: number };
+  last_run: { search: number; detail: number; at: string } | null;
 }
 export type FreshnessBand = "fresh" | "active" | "aging" | "late" | "unknown";
 export type PostingStage = "prospect" | "interested" | "dismissed";
@@ -26,7 +33,6 @@ export interface Readiness {
   targets: number;
   max_targets: number;
   new_strong: number;
-  serpapi: { set: boolean; last4: string | null };
   accounts: AccountStatus[];
   options: { counts: number[]; depths: Depth[]; sources: Source[]; clusters: Record<string, string> };
 }
@@ -62,6 +68,8 @@ export interface TargetRoute {
   verified_at: string | null;
   note: string;
   careers_url: string;
+  board_url: string;
+  search_url: string;
 }
 
 export interface Target {
@@ -112,6 +120,12 @@ export interface Posting {
   also_listed_on: string[];
   aggregator_only: boolean;
   read_by_claude?: boolean;
+  /** Set for a staffing agency's own posting (Robert Half); the hiring company is not named. */
+  agency?: string;
+  employment_type?: string;
+  /** The company's own careers page, and its job search run for this title when the site has one. */
+  company_careers_url?: string;
+  company_search_url?: string;
   pay_min: number | null;
   pay_max: number | null;
   pay_text: string;
@@ -152,6 +166,8 @@ export interface CoverageRow {
   count: number;
   status: "ok" | "failed";
   note: string;
+  careers_url?: string;
+  search_url?: string;
 }
 
 export interface RunReport {

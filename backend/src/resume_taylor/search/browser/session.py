@@ -8,9 +8,8 @@ from pathlib import Path
 
 from .state import human_delay, tripped
 
-
 # A cookie that only exists once you are signed in (LinkedIn can land on many pages after login).
-SESSION_COOKIES = {"linkedin": "li_at", "google": "SID"}
+SESSION_COOKIES = {"linkedin": "li_at"}
 
 
 @dataclass
