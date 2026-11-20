@@ -29,8 +29,9 @@ from .filters import apply_filters
 from .http import Client
 from .ideation import ideate
 from .normalize import norm_company
-from .prefs import COUNTS, DEPTHS, Preferences, load_prefs
+from .prefs import COUNTS, DEPTHS, Preferences, load_prefs, resolve_min_level
 from .relevance import RoleFamily
+from .research import research_results
 from .routes import RouteBook, careers_link
 from .score import cheap_rank, finalize, score_postings
 from .sweep import claude_sweep, expand_queries
@@ -111,6 +112,7 @@ def run_search(args, client: Client | None = None, progress=print) -> dict:
     cfg = DEPTH[prefs.depth]
     count = prefs.count
     cand = build_candidate(*(Path(p) if p else None for p in (args.profile, args.resume, args.fact_bank)), prefs)
+    prefs = prefs.model_copy(update={"min_level": resolve_min_level(prefs, cand.titles)})
     client = client or Client(cache_dir=args.cache_dir)
     book = RouteBook(args.routes)
     known = _read_json(args.store, {})  # id -> stored posting (for first_seen)
@@ -122,7 +124,7 @@ def run_search(args, client: Client | None = None, progress=print) -> dict:
     timings: dict[str, float] = {}
     report: dict = {
         "started": _now().isoformat(timespec="seconds"), "count": count, "depth": prefs.depth, "sources": prefs.sources,
-        "tier": cand.tier, "coverage": [], "rejected": [], "ideated": [], "source_counts": {}, "notes": [],
+        "tier": cand.tier, "min_level": prefs.min_level, "coverage": [], "rejected": [], "ideated": [], "source_counts": {}, "notes": [],
     }
 
     # -- companies: your list plus ideated ones ------------------------------------------------
@@ -132,7 +134,8 @@ def run_search(args, client: Client | None = None, progress=print) -> dict:
     if "ideated" in prefs.sources and cfg["ideated"]:
         t = time.time()
         progress(f"Thinking of {cfg['ideated']} more companies to look at...")
-        ideas = ideate(cand, cfg["ideated"], exclude=[c["name"] for c in companies],
+        passed_on = [p["company"] for p in known.values() if p.get("stage") == "dismissed" and p.get("dismiss_reason") == "company"]
+        ideas = ideate(cand, cfg["ideated"], exclude=[*(c["name"] for c in companies), *passed_on],
                        model=args.model, effort=args.effort)
         report["ideated"] = ideas
         companies += [{"name": i["name"], "careers_url": i.get("careers_url", ""), "origin": "ideated", "cluster": i["cluster"]} for i in ideas]
@@ -365,6 +368,15 @@ def run_search(args, client: Client | None = None, progress=print) -> dict:
             s.close()
     for site, used in usage.items():
         accounts.record_run(site, used)
+
+    # -- a sourced brief on the companies behind the results -------------------------------------
+    if results and prefs.depth != "quick":
+        stage("researching")
+        t = time.time()
+        briefs = research_results(results, cache_dir=Path(args.cache_dir) if args.cache_dir else None, model=args.model,
+                                  effort=args.effort, progress=progress)
+        report["source_counts"]["company_briefs"] = briefs
+        timings["researching"] = round(time.time() - t, 1)
 
     # -- rank and report -----------------------------------------------------------------------
     stage("ranking")

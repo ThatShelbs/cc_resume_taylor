@@ -94,6 +94,11 @@ def parse_args(argv=None) -> argparse.Namespace:
         type=Path,
         help="text file of the candidate's own notes for this application (e.g. interview answers)",
     )
+    parser.add_argument(
+        "--posting-insights",
+        type=Path,
+        help="text file of hints the job search produced for this posting (emphasis only, never facts)",
+    )
     parser.add_argument("--no-pdf", action="store_true", help="skip the Word-based PDF export")
     parser.add_argument(
         "--dry-run",

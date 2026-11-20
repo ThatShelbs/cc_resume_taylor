@@ -72,6 +72,14 @@ def _read_extra_context(args: argparse.Namespace) -> str:
     )
 
 
+def _read_posting_insights(args: argparse.Namespace) -> str:
+    """Hints from the job search about this posting (fit angle, matched facts, gaps), already labeled."""
+    path = getattr(args, "posting_insights", None)
+    if not path or not path.exists():
+        return ""
+    return path.read_text(encoding="utf-8").strip()
+
+
 def generate(args: argparse.Namespace, ctx: dict) -> dict:
     """The Claude-backed half: draft, structure, and validate. Returns a result dict."""
     fact_bank = ctx["fact_bank"]
@@ -93,7 +101,7 @@ def generate(args: argparse.Namespace, ctx: dict) -> dict:
                 f"{states.count('positionable')} positionable, "
                 f"{states.count('adjacent')} related, {states.count('gap')} gaps."
             )
-    notes = _read_extra_context(args)
+    notes = ("\n\n").join(x for x in (_read_extra_context(args), _read_posting_insights(args)) if x)
     if notes:
         extra = f"{extra}\n\n{notes}" if extra else notes
 

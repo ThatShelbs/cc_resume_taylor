@@ -33,6 +33,9 @@ function RouteChip({ t }: { t: Target }) {
     const chip = <Badge variant="success">{atsLabel(r.ats)}{r.job_count !== null ? `, ${r.job_count} postings` : ""}</Badge>;
     return r.board_url ? <a href={r.board_url} target="_blank" rel="noreferrer" title="Open the job board">{chip}</a> : chip;
   }
+  if (r.status === "empty") {
+    return <Badge variant="outline" title={r.note || "Its career site works but lists no openings. It is checked again within a week."}>No openings right now</Badge>;
+  }
   if (r.status === "failed") return <Badge variant="warning" title={r.note}>Not found. Add its careers URL</Badge>;
   return <Badge variant="outline">Not checked yet</Badge>;
 }

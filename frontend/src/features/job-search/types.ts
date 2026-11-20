@@ -33,6 +33,8 @@ export interface Readiness {
   targets: number;
   max_targets: number;
   new_strong: number;
+  /** Profile or resume exists but no search settings or runs yet: the page drafts settings and searches by itself. */
+  first_run: boolean;
   accounts: AccountStatus[];
   options: { counts: number[]; depths: Depth[]; sources: Source[]; clusters: Record<string, string> };
 }
@@ -40,6 +42,9 @@ export interface Readiness {
 export interface Preferences {
   titles: string[];
   equivalent_titles: string[];
+  /** Words naming the function itself ("medical affairs"); a posting title must contain one set of them. */
+  title_keywords: string[];
+  /** "" means: one level below the most recent resume title. */
   min_level: string;
   skill_terms: string[];
   industries: string[];
@@ -62,7 +67,7 @@ export interface Preferences {
 }
 
 export interface TargetRoute {
-  status: "resolved" | "failed" | "unresolved";
+  status: "resolved" | "empty" | "failed" | "unresolved";
   ats: string;
   job_count: number | null;
   verified_at: string | null;
@@ -138,6 +143,15 @@ export interface Posting {
   verified?: "live" | "unconfirmed" | "closed";
   last_verified_at?: string;
   fit?: Fit;
+  /** The posting's requirements mapped against the person's evidence (covered, positionable, adjacent, gap). */
+  requirements?: { term: string; status: "covered" | "positionable" | "adjacent" | "gap"; kind?: string }[];
+  /** A sourced brief on the company, from the last run (every claim links to its source). */
+  research?: {
+    snapshot: string;
+    snapshot_url: string;
+    signals: { text: string; date: string; url: string }[];
+    needs: string;
+  };
   flags?: string[];
   stage: PostingStage;
   dismiss_reason: string;
@@ -164,7 +178,10 @@ export interface CoverageRow {
   origin: string;
   ats: string;
   count: number;
-  status: "ok" | "failed";
+  /** Listed postings that were not the wanted role (dropped before scoring). */
+  off_role?: number;
+  listed?: number;
+  status: "ok" | "empty" | "failed";
   note: string;
   careers_url?: string;
   search_url?: string;
@@ -185,6 +202,10 @@ export interface RunReport {
   source_counts: Record<string, number>;
   careers_only_share?: number;
   postings_seen?: number;
+  /** Everything the companies listed, and how much of it was not the wanted role. */
+  listed?: number;
+  off_role?: number;
+  min_level?: string;
   timings?: Record<string, number>;
 }
 

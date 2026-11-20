@@ -248,3 +248,41 @@ def test_search_timeout_grows_with_signed_in_sites(js, monkeypatch):
     r = js.post("/api/job-search/search", json={"count": 5, "depth": "quick", "sources": ["boards", "linkedin_account", "ziprecruiter_account"]})
     assert r.status_code == 200, r.text
     assert seen["timeout"] == jsr.DEPTH_TIMEOUT["quick"] + 2 * jsr.ACCOUNT_SITE_TIMEOUT
+
+
+FAKE_DRAFT = textwrap.dedent("""\
+    import json, sys
+    from pathlib import Path
+    args = sys.argv[1:]
+    Path(args[args.index("--out") + 1]).write_text(json.dumps({
+        "titles": ["Director, AI"], "title_keywords": ["machine learning"], "skill_terms": ["Python"],
+        "industries": ["Pharma"], "min_level": "senior_manager"}))
+    """)
+
+
+def test_first_run_flag_and_draft_merge_into_empty_fields_only(js, tmp_path, monkeypatch):
+    draft = tmp_path / "fake_draft.py"
+    draft.write_text(FAKE_DRAFT, encoding="utf-8")
+    monkeypatch.setattr(Paths, "search_draft_command", property(lambda self: [str(draft)]))
+    assert js.get("/api/job-search/readiness").json()["first_run"] is True
+    js.put("/api/job-search/preferences", json={"titles": ["Head of Data"]})
+    done = wait(js, js.post("/api/job-search/preferences/draft").json()["id"])
+    assert done["status"] == "succeeded", done
+    prefs = js.get("/api/job-search/preferences").json()
+    assert prefs["titles"] == ["Head of Data"]  # typed value kept
+    assert prefs["title_keywords"] == ["machine learning"] and prefs["min_level"] == "senior_manager"
+    assert js.get("/api/job-search/readiness").json()["first_run"] is False
+
+
+def test_tailor_passes_the_search_insights_to_the_pipeline(js, monkeypatch):
+    mock_http(monkeypatch)
+    run_search(js)
+    r = js.post(f"/api/job-search/postings/{POSTING_ID}/tailor", json={"generate": False})
+    assert r.status_code == 200, r.text
+    ctx = js.app.state.ctx
+    hints = ctx.store.dir(r.json()["project"]["id"]) / "posting_insights.txt"
+    assert hints.exists() and "Pharma launches" in hints.read_text(encoding="utf-8")
+    from resume_taylor.api.services.pipeline_runner import pipeline_command
+    cmd = pipeline_command(ctx.paths, job_text=hints, out_dir=hints.parent, result_json=hints.parent / "r.json", template="classic",
+                           posting_insights=hints)
+    assert "--posting-insights" in cmd

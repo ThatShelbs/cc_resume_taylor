@@ -115,6 +115,10 @@ write for the person who owns outcomes, not the person who executes tasks:
 
 - If a POSTING ANALYSIS block is supplied, treat its ranked terms as the posting's priorities;
   only work in terms listed as supported, and never use anything listed as having no evidence.
+- If a JOB SEARCH HINTS block is supplied, it records what the job search already matched for this
+  role. Lead with the facts and requirements it lists as supported, and position (never claim) the
+  related-work items. It is emphasis only: it adds no facts, every bullet still cites fact ids, and
+  anything under "Gaps" stays out of the resume.
 - Before writing anything, identify the 5-8 things this specific posting most cares about
   (its "You Will" / "You Have" priorities, its named responsibilities, its own
   vocabulary).

@@ -554,6 +554,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/job-search/preferences/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Draft Preferences
+         * @description Draft search settings from the resume (one Claude call) and merge them into the empty fields of
+         *     the saved preferences. Runs as a search-lane job; what the person already typed is never replaced.
+         */
+        post: operations["draft_preferences_api_job_search_preferences_draft_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/job-search/targets": {
         parameters: {
             query?: never;
@@ -1560,9 +1581,11 @@ export interface components {
             titles?: string[];
             /** Equivalent Titles */
             equivalent_titles?: string[];
+            /** Title Keywords */
+            title_keywords?: string[];
             /**
              * Min Level
-             * @default director
+             * @default
              */
             min_level: string;
             /** Skill Terms */
@@ -2845,6 +2868,26 @@ export interface operations {
         };
     };
     suggest_preferences_api_job_search_preferences_suggest_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    draft_preferences_api_job_search_preferences_draft_post: {
         parameters: {
             query?: never;
             header?: never;

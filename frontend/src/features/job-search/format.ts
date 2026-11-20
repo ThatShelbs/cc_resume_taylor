@@ -45,6 +45,12 @@ export function verifiedLabel(p: Pick<Posting, "verified" | "last_verified_at">,
   return p.verified === "live" ? `Verified live ${when}` : `Checked ${when}, could not confirm`;
 }
 
+export const SOURCE_HINTS: Record<string, string> = {
+  targets: "Companies you chose",
+  ideated: "Companies Claude suggests from your history",
+  boards: "LinkedIn, Indeed and others by web search",
+};
+
 export const SOURCE_LABELS: Record<string, string> = {
   targets: "My target companies",
   ideated: "Ideated companies",
