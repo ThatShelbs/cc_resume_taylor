@@ -29,7 +29,9 @@ from .filters import apply_filters
 from .http import Client
 from .ideation import ideate
 from .normalize import norm_company
-from .prefs import COUNTS, DEPTHS, Preferences, load_prefs
+from .prefs import COUNTS, DEPTHS, Preferences, load_prefs, resolve_min_level
+from .relevance import RoleFamily
+from .research import research_results
 from .routes import RouteBook, careers_link
 from .score import cheap_rank, finalize, score_postings
 from .sweep import claude_sweep, expand_queries
@@ -61,17 +63,30 @@ def _read_json(path, default):
         return default
 
 
-def pull_company(client, route: dict, name: str, titles: list[str], origin: str, cluster: str = "") -> tuple[list[dict], str]:
+def pull_company(client, route: dict, name: str, titles: list[str], origin: str, cluster: str = "",
+                 family: RoleFamily | None = None) -> tuple[list[dict], str, int]:
+    """(on-role postings, error, how many listed postings were not the wanted role)."""
     conn = connector_for(route)
     if not conn:
-        return [], "no connector"
+        return [], "no connector", 0
     try:
         jobs = conn.list_jobs(client, route, name, titles)
     except (KeyError, ValueError, TypeError) as exc:
-        return [], f"{exc.__class__.__name__}: {exc}"
+        return [], f"{exc.__class__.__name__}: {exc}", 0
+    off_role = 0
+    if family is not None:
+        jobs, off_role = family.split(jobs)
     for p in jobs:
         p["route"], p["origin"], p["ideated_cluster"] = route, origin, cluster
-    return jobs, ""
+    return jobs, "", off_role
+
+
+def _coverage_status(route: dict, jobs: list, off_role: int, err: str) -> str:
+    """ok: postings found (or listings exist but none are your role); empty: the site works but lists
+    nothing; failed: no usable route or an error."""
+    if err or route.get("status") not in ("resolved", "empty"):
+        return "failed"
+    return "ok" if jobs or off_role else "empty"
 
 
 def _links(route: dict, query: str, prefix: str = "") -> dict:
@@ -97,15 +112,19 @@ def run_search(args, client: Client | None = None, progress=print) -> dict:
     cfg = DEPTH[prefs.depth]
     count = prefs.count
     cand = build_candidate(*(Path(p) if p else None for p in (args.profile, args.resume, args.fact_bank)), prefs)
+    prefs = prefs.model_copy(update={"min_level": resolve_min_level(prefs, cand.titles)})
     client = client or Client(cache_dir=args.cache_dir)
     book = RouteBook(args.routes)
     known = _read_json(args.store, {})  # id -> stored posting (for first_seen)
     targets = _read_json(args.targets, []) if "targets" in prefs.sources else []
     titles = prefs.titles or cand.titles[:2] or ["director"]
+    family = RoleFamily.from_prefs(prefs, cand)
+    queries = family.search_terms() or titles  # short role keywords for servers that search
+    off_role_total = 0
     timings: dict[str, float] = {}
     report: dict = {
         "started": _now().isoformat(timespec="seconds"), "count": count, "depth": prefs.depth, "sources": prefs.sources,
-        "tier": cand.tier, "coverage": [], "rejected": [], "ideated": [], "source_counts": {}, "notes": [],
+        "tier": cand.tier, "min_level": prefs.min_level, "coverage": [], "rejected": [], "ideated": [], "source_counts": {}, "notes": [],
     }
 
     # -- companies: your list plus ideated ones ------------------------------------------------
@@ -115,7 +134,8 @@ def run_search(args, client: Client | None = None, progress=print) -> dict:
     if "ideated" in prefs.sources and cfg["ideated"]:
         t = time.time()
         progress(f"Thinking of {cfg['ideated']} more companies to look at...")
-        ideas = ideate(cand, cfg["ideated"], exclude=[c["name"] for c in companies],
+        passed_on = [p["company"] for p in known.values() if p.get("stage") == "dismissed" and p.get("dismiss_reason") == "company"]
+        ideas = ideate(cand, cfg["ideated"], exclude=[*(c["name"] for c in companies), *passed_on],
                        model=args.model, effort=args.effort)
         report["ideated"] = ideas
         companies += [{"name": i["name"], "careers_url": i.get("careers_url", ""), "origin": "ideated", "cluster": i["cluster"]} for i in ideas]
@@ -131,24 +151,32 @@ def run_search(args, client: Client | None = None, progress=print) -> dict:
 
     def pull(c):
         route = routes.get(c["name"])
-        if not route or route.get("status") != "resolved":
-            return c, [], (route or {}).get("note") or "no careers page found"
-        jobs, err = pull_company(client, route, c["name"], titles, c["origin"], c["cluster"])
-        return c, jobs, err
+        if not route or route.get("status") not in ("resolved", "empty"):
+            return c, [], (route or {}).get("note") or "no careers page found", 0
+        jobs, err, off = pull_company(client, route, c["name"], queries, c["origin"], c["cluster"], family)
+        return c, jobs, err, off
 
     with ThreadPoolExecutor(max_workers=6) as ex:
-        for c, jobs, err in ex.map(pull, companies):
+        for c, jobs, err, off in ex.map(pull, companies):
             route = routes.get(c["name"]) or {}
+            off_role_total += off
             report["coverage"].append({
                 "company": c["name"], "origin": c["origin"], "ats": route.get("ats", ""), "count": len(jobs),
-                "status": "ok" if jobs or (route.get("status") == "resolved" and not err) else "failed", "note": err,
+                "off_role": off, "listed": len(jobs) + off,
+                "status": _coverage_status(route, jobs, off, err),
+                "note": err or (f"{off} listings, none match your role." if off and not jobs else ""),
                 **_links(route, titles[0]),
             })
             pool.extend(jobs)
             pools.setdefault(norm_company(c["name"]), []).extend(jobs)
             if jobs:
                 progress(f"{c['name']} ({route.get('ats', '')}): {len(jobs)} postings")
+    for row in report["coverage"]:
+        if not row["note"]:
+            book.record_run(row["company"], row["listed"])  # a route that lists nothing is rechecked within a week
+    book.save()
     report["source_counts"]["careers_pages"] = len(pool)
+    report["source_counts"]["careers_pages_off_role"] = off_role_total
     timings["careers_pages"] = round(time.time() - t, 1)
 
     # -- job boards ----------------------------------------------------------------------------
@@ -198,6 +226,8 @@ def run_search(args, client: Client | None = None, progress=print) -> dict:
         hits += found
         if note:
             report["notes"].append(note)
+    hits, off_hits = family.split(hits)  # board leads face the same role gate as career-site postings
+    off_role_total += off_hits
     for src in ("linkedin", "indeed", "glassdoor", "web", "ziprecruiter", "builtin"):
         n = sum(1 for h in hits if h["source"] == src)
         if n:
@@ -219,15 +249,19 @@ def run_search(args, client: Client | None = None, progress=print) -> dict:
                 new_names.append({"name": h["company"], "careers_url": ""})
         extra = discover_routes(client, book, new_names, model=args.model, effort=args.effort, progress=progress) if new_names else {}
         for name, route in extra.items():
-            if route.get("status") == "resolved":
-                jobs, err = pull_company(client, route, name, titles, "board")
+            if route.get("status") in ("resolved", "empty"):
+                jobs, err, off = pull_company(client, route, name, queries, "board", family=family)
+                off_role_total += off
                 pools.setdefault(norm_company(name), []).extend(jobs)
                 report["coverage"].append({"company": name, "origin": "board", "ats": route.get("ats", ""), "count": len(jobs),
-                                           "status": "ok" if jobs else "failed", "note": err, **_links(route, titles[0])})
+                                           "off_role": off, "listed": len(jobs) + off,
+                                           "status": _coverage_status(route, jobs, off, err), "note": err,
+                                           **_links(route, titles[0])})
         for h in hits:  # a board hit's apply link may reveal the employer's ATS directly
             key = norm_company(h["company"])
             if key not in pools and (r := route_from_links(h)):
-                jobs, _ = pull_company(client, r, h["company"], titles, "board")
+                jobs, _, off = pull_company(client, r, h["company"], queries, "board", family=family)
+                off_role_total += off
                 pools[key] = jobs
         matched, leads = crosswalk(hits, pools)
         progress(f"Job boards: {len(hits)} leads, {len(matched)} matched to careers pages, {len(leads)} board-only")
@@ -251,6 +285,8 @@ def run_search(args, client: Client | None = None, progress=print) -> dict:
     now = _now()
     pool = dedupe(pool)
     report["postings_seen"] = len(pool)
+    report["off_role"] = off_role_total
+    report["listed"] = len(pool) + off_role_total
     for p in pool:
         prior = known.get(p["id"]) or {}
         p["first_seen"] = prior.get("first_seen") or now.isoformat(timespec="seconds")
@@ -332,6 +368,15 @@ def run_search(args, client: Client | None = None, progress=print) -> dict:
             s.close()
     for site, used in usage.items():
         accounts.record_run(site, used)
+
+    # -- a sourced brief on the companies behind the results -------------------------------------
+    if results and prefs.depth != "quick":
+        stage("researching")
+        t = time.time()
+        briefs = research_results(results, cache_dir=Path(args.cache_dir) if args.cache_dir else None, model=args.model,
+                                  effort=args.effort, progress=progress)
+        report["source_counts"]["company_briefs"] = briefs
+        timings["researching"] = round(time.time() - t, 1)
 
     # -- rank and report -----------------------------------------------------------------------
     stage("ranking")

@@ -14,7 +14,8 @@ SOURCES = ("targets", "ideated", "boards", "roberthalf", "linkedin", "linkedin_a
 class Preferences(BaseModel):
     titles: list[str] = Field(default_factory=list)  # title variants to search
     equivalent_titles: list[str] = Field(default_factory=list)  # treated as at least director
-    min_level: str = "director"
+    title_keywords: list[str] = Field(default_factory=list)  # role family words, such as "medical affairs"
+    min_level: str = ""  # "" = derive from the resume: one level below the most recent title
     skill_terms: list[str] = Field(default_factory=list)
     industries: list[str] = Field(default_factory=list)
     admired_companies: list[str] = Field(default_factory=list)
@@ -36,7 +37,7 @@ class Preferences(BaseModel):
 
     def normalized(self) -> "Preferences":
         data = self.model_dump()
-        data["min_level"] = data["min_level"] if data["min_level"] in LEVELS else "director"
+        data["min_level"] = data["min_level"] if data["min_level"] in LEVELS else ""
         data["depth"] = data["depth"] if data["depth"] in DEPTHS else "standard"
         data["count"] = data["count"] if data["count"] in COUNTS else 5
         data["recency_days"] = max(1, min(90, int(data["recency_days"])))
@@ -47,6 +48,20 @@ class Preferences(BaseModel):
         data["sources"] = [s for s in data["sources"] if s in SOURCES]
         data["remote_states"] = [s.strip().upper() for s in data["remote_states"] if s.strip()]
         return Preferences(**data)
+
+
+def resolve_min_level(prefs: Preferences, past_titles: list[str] | tuple = ()) -> str:
+    """The level floor to apply. An explicit choice wins; otherwise one level below the highest of the
+    wanted or recent titles, so lateral and step-up roles pass. Unknown history means manager."""
+    if prefs.min_level in LEVELS:
+        return prefs.min_level
+    from .normalize import level_rank, title_level  # imported here: normalize imports this module
+
+    titles = [*prefs.titles[:3], *list(past_titles)[:3]]
+    top = max((level_rank(title_level(t, prefs.equivalent_titles)) for t in titles), default=-1)
+    if top < 0:
+        return "manager"
+    return LEVELS[max(0, top - 1)]
 
 
 def load_prefs(path) -> Preferences:

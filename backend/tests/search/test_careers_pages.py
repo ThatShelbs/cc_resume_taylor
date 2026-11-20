@@ -127,9 +127,11 @@ def test_careers_page_backfill_asks_once_and_skips_job_boards(tmp_path, monkeypa
     assert out["Initech"]["careers_url"] == "https://www.initech.test/careers"
     assert out["Initech"]["search_url"] == "https://www.initech.test/careers/search?q={q}"
     assert out["Globex"]["careers_url"] == "" and out["Globex"]["careers_url_checked"]  # a LinkedIn page is never a careers page
-    assert "job board already known" in asked[0]
+    # an empty board is not an answer: the company is asked about once, then saved as "no openings right now"
+    assert out["Initech"]["status"] == "empty" and out["Initech"]["ats"] == "greenhouse"
+    first_run = len(asked)  # the batch lookup, plus one read of Initech's own careers page before settling for "empty"
     discovery.discover_routes(c, RouteBook(tmp_path / "routes.json"), [{"name": "Initech"}, {"name": "Globex"}], progress=lambda *_: None)
-    assert len(asked) == 1  # looked up once, then remembered
+    assert len(asked) == first_run and first_run == 2  # then remembered
 
 
 def test_search_run_links_every_posting_to_the_company_careers_page(tmp_path, monkeypatch):

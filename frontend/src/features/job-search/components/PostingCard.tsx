@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { BadgeCheck, Building2, ExternalLink, MapPin, RefreshCw, ThumbsDown, ThumbsUp, Wand2 } from "lucide-react";
+import { BadgeCheck, Building2, ChevronDown, ExternalLink, MapPin, RefreshCw, ThumbsDown, ThumbsUp, Wand2 } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -19,14 +19,22 @@ const SUB_LABELS: Record<string, string> = {
   freshness: "Freshness", comp: "Pay", location: "Location", source: "Direct source",
 };
 
+const REQ_LABELS: Record<string, string> = {
+  covered: "Your evidence covers", positionable: "Position through related work", adjacent: "Related experience only", gap: "No evidence (do not claim)",
+};
+
 export function PostingCard({
   posting,
   onTailor,
+  onTailorOptions,
   onAddCompany,
   companyIsTarget,
 }: {
   posting: Posting;
+  /** One click: tailor with the saved defaults. */
   onTailor: (p: Posting) => void;
+  /** Open the options dialog (template, cover letter, interview first). */
+  onTailorOptions?: (p: Posting) => void;
   onAddCompany?: (name: string) => void;
   companyIsTarget: boolean;
 }) {
@@ -70,7 +78,7 @@ export function PostingCard({
             ) : posting.also_listed_on.length ? (
               <Badge variant="secondary">Also on {posting.also_listed_on.join(", ")}</Badge>
             ) : (
-              <Badge variant="success" title="Listed on the company's careers page only, which usually means a smaller applicant pool.">Careers page only</Badge>
+              <Badge variant="success" title="Listed on the company's own careers site only, which usually means a smaller applicant pool than LinkedIn.">Not on LinkedIn</Badge>
             )}
             {posting.stage === "interested" && <Badge>Interested</Badge>}
             {posting.project_id && (
@@ -106,6 +114,12 @@ export function PostingCard({
       </div>
 
       {fit?.verdict && <p className="text-sm leading-relaxed">{fit.verdict}</p>}
+      {fit && (fit.angle || fit.gaps.length > 0) && (
+        <div className="grid gap-1 text-xs leading-relaxed">
+          {fit.angle && <p><span className="font-medium">Why you: </span>{fit.angle}</p>}
+          {fit.gaps.length > 0 && <p className="text-muted-foreground"><span className="font-medium text-foreground">Be ready to address: </span>{fit.gaps.slice(0, 2).join("; ")}</p>}
+        </div>
+      )}
 
       {fit && (
         <div>
@@ -133,7 +147,31 @@ export function PostingCard({
                   <ul className="mt-1 list-disc pl-5 text-xs text-muted-foreground">{fit.gaps.map((g) => <li key={g}>{g}</li>)}</ul>
                 </div>
               )}
-              {fit.angle && <p className="text-xs"><span className="font-medium">Angle: </span>{fit.angle}</p>}
+              {(posting.requirements ?? []).length > 0 && (
+                <div className="grid gap-1.5">
+                  <div className="text-xs font-medium">What the posting asks for, against your evidence</div>
+                  {(["covered", "positionable", "adjacent", "gap"] as const).map((st) => {
+                    const terms = (posting.requirements ?? []).filter((r) => r.status === st).map((r) => r.term);
+                    return terms.length ? (
+                      <p key={st} className="text-xs"><span className="text-muted-foreground">{REQ_LABELS[st]}: </span>{terms.slice(0, 10).join(", ")}</p>
+                    ) : null;
+                  })}
+                </div>
+              )}
+              {posting.research && (
+                <div className="grid gap-1.5 rounded-md border bg-muted/30 p-3">
+                  <div className="text-xs font-medium">About {posting.company}</div>
+                  {posting.research.snapshot && (
+                    <p className="text-xs">{posting.research.snapshot} <a href={posting.research.snapshot_url} target="_blank" rel="noreferrer" className="text-primary underline-offset-2 hover:underline">Source</a></p>
+                  )}
+                  {posting.research.signals.map((s) => (
+                    <p key={s.url} className="text-xs text-muted-foreground">
+                      {s.date ? `${s.date}: ` : ""}{s.text} <a href={s.url} target="_blank" rel="noreferrer" className="text-primary underline-offset-2 hover:underline">Source</a>
+                    </p>
+                  ))}
+                  {posting.research.needs && <p className="text-xs"><span className="font-medium">What this team likely needs: </span>{posting.research.needs}</p>}
+                </div>
+              )}
               {posting.freshness_note && <p className="text-xs text-muted-foreground">{posting.freshness_note}</p>}
               {posting.ats && <p className="text-xs text-muted-foreground">Source: {atsLabel(posting.ats)}{posting.read_by_claude ? " (read by Claude from the page)" : ""}</p>}
             </div>
@@ -143,13 +181,21 @@ export function PostingCard({
 
       <div className="flex flex-wrap items-center gap-2">
         {!posting.project_id && (
-          <Button size="sm" variant="gradient" onClick={() => onTailor(posting)}>
-            <Wand2 /> Tailor resume
-          </Button>
+          <div className="inline-flex">
+            <Button size="sm" variant="gradient" className={onTailorOptions ? "rounded-r-none" : undefined} onClick={() => onTailor(posting)}>
+              <Wand2 /> Tailor resume
+            </Button>
+            {onTailorOptions && (
+              <Button size="sm" variant="gradient" className="rounded-l-none border-l border-white/30 px-2" aria-label="Tailor with options" title="Choose a template, cover letter or interview first"
+                onClick={() => onTailorOptions(posting)}>
+                <ChevronDown />
+              </Button>
+            )}
+          </div>
         )}
         {posting.stage === "prospect" && !posting.project_id && (
-          <Button size="sm" variant="outline" onClick={() => patch.mutate({ stage: "interested" })}>
-            <ThumbsUp /> Interested
+          <Button size="sm" variant="ghost" onClick={() => patch.mutate({ stage: "interested" })} title="Keep it in your pipeline without tailoring yet">
+            <ThumbsUp /> Save
           </Button>
         )}
         {!dismissed && !posting.project_id && (

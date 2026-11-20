@@ -83,14 +83,22 @@ def _pay(job: dict) -> dict:
             "currency": (job.get("baseSalary") or {}).get("currency") or "USD", "pay_period": "year"}
 
 
-def posting_from_jsonld(job: dict, company: str, url: str, read_by_claude: bool = False) -> dict:
+def _listing_id(job: dict, listing_url: str, index: int) -> str:
+    """A stable id for a posting read from a listing page: its own URL or requisition id, never the
+    listing's URL alone (that would give every posting on the page the same id)."""
+    ident = job.get("identifier") or {}
+    req = str(ident.get("value", "") if isinstance(ident, dict) else ident or "")
+    return job.get("url") or (f"{listing_url}#{req}" if req else f"{listing_url}#{index}-{job.get('title', '')}")
+
+
+def posting_from_jsonld(job: dict, company: str, url: str, read_by_claude: bool = False, external_id: str = "") -> dict:
     text = html_to_text(job.get("description", ""))
     org = job.get("hiringOrganization") or {}
     ident = job.get("identifier") or {}
     p = new_posting(
         source=NAME, ats=NAME, company=company or (org.get("name") if isinstance(org, dict) else ""),
         title=job.get("title", ""), req_id=str(ident.get("value", "") if isinstance(ident, dict) else ident or ""),
-        external_id=url, locations=_loc(job), posted_at=job.get("datePosted"),
+        external_id=external_id or url, locations=_loc(job), posted_at=job.get("datePosted"),
         posted_at_source="ats" if job.get("datePosted") else "", closes_at=job.get("validThrough"),
         url=url, apply_url=job.get("url") or url, description_text=text, read_by_claude=read_by_claude, **_pay(job),
     )
@@ -126,19 +134,23 @@ def _fetch_posting(client, url: str, company: str, title: str = "", read_by_clau
     return [p]
 
 
+def _from_listing(jobs: list[dict], company: str, url: str) -> list[dict]:
+    return [posting_from_jsonld(j, company, j.get("url") or url, external_id=_listing_id(j, url, i)) for i, j in enumerate(jobs)]
+
+
 def _postings_on(client, url: str, company: str, queries: list[str], budget: int) -> list[dict]:
     """JSON-LD on the page itself, else the posting links it carries (plain HTML first, then rendered)."""
     if not url or not client.allowed_by_robots(url):
         return []
     html = _read(client, url)
-    direct = [posting_from_jsonld(j, company, url) for j in jsonld_postings(html)]
+    direct = _from_listing(jsonld_postings(html), company, url)
     if direct:
         return direct[:budget]
     links = rendering.job_links(rendering.static_anchors(html, url), url, queries, limit=budget)
     if not links:
         page = rendering.render(url)
         if page:
-            direct = [posting_from_jsonld(j, company, url) for j in jsonld_postings(page.html)]
+            direct = _from_listing(jsonld_postings(page.html), company, url)
             if direct:
                 return direct[:budget]
             links = rendering.job_links(page.anchors, page.url, queries, limit=budget)
@@ -157,7 +169,7 @@ def list_jobs(client, route: dict, company: str, queries: list[str]) -> list[dic
 
     def add(items):
         for p in items:
-            out.setdefault(p["url"] or p["id"], p)
+            out.setdefault(p["id"], p)
 
     if template and "{q}" in template:
         for q in (queries[:MAX_SEARCHES] or [""]):

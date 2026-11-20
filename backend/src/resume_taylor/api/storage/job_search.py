@@ -78,7 +78,34 @@ class JobSearchStore:
     # -- targets ---------------------------------------------------------------------------------
 
     def targets(self) -> list[dict]:
-        return self._read(self.targets_path, [])
+        """The target list. Duplicates that only differ by a descriptor or abbreviation ("Veeva" and
+        "Veeva Systems", "J&J" and "Johnson & Johnson") are merged once, keeping the first entry's
+        name and any user-set fields; the old file is copied aside first."""
+        raw = self._read(self.targets_path, [])
+        merged: dict[str, dict] = {}
+        for t in raw:
+            key = norm_company(t.get("name", ""))
+            if not key:
+                continue
+            if key not in merged:
+                merged[key] = {**t, "id": key}
+                continue
+            keep = merged[key]
+            for f in ("careers_url", "cluster", "rationale"):
+                if not keep.get(f) and t.get(f):
+                    keep[f] = t[f]
+            notes = [n for n in (keep.get("notes", ""), t.get("notes", "")) if n]
+            keep["notes"] = "\n".join(dict.fromkeys(notes))
+            keep["also_known_as"] = list(dict.fromkeys([*keep.get("also_known_as", []), t["name"]]))
+        out = list(merged.values())
+        if raw and ([t.get("id") for t in raw] != [t["id"] for t in out]):
+            try:
+                backup = self.targets_path.with_name(f"targets.{datetime.now().strftime('%Y%m%d-%H%M%S')}.bak.json")
+                atomic_write_text(backup, json.dumps(raw, indent=2))
+                self._write(self.targets_path, out)
+            except OSError:
+                pass
+        return out
 
     def routes(self) -> RouteBook:
         return RouteBook(self.routes_path)

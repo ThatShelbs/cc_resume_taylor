@@ -14,6 +14,8 @@ from resume_taylor.search.candidate import readiness
 from resume_taylor.search.http import Client
 from resume_taylor.search.ideation import CLUSTERS
 from resume_taylor.search.importer import ImportFailed, import_url
+from resume_taylor.search.insights import posting_insights_text
+from resume_taylor.search.normalize import norm_company
 from resume_taylor.search.prefs import COUNTS, DEPTHS, SOURCES, Preferences
 from resume_taylor.search.verify import verify_posting
 
@@ -82,6 +84,7 @@ def get_readiness(ctx: Ctx):
         "has_profile": bool(pp), "has_resume": bool(rp), "has_fact_bank": ctx.paths.fact_bank_path.exists(),
         "targets": len(store.targets()), "max_targets": MAX_TARGETS,
         "new_strong": store.count_new_strong(),
+        "first_run": bool((pp or rp) and not store.prefs_path.exists() and not store.list_runs()),
         "accounts": _account_statuses(ctx),
         "options": {"counts": list(COUNTS), "depths": list(DEPTHS), "sources": list(SOURCES), "clusters": CLUSTERS},
     }
@@ -162,6 +165,39 @@ def suggest_preferences(ctx: Ctx):
     return out
 
 
+@router.post("/preferences/draft")
+def draft_preferences(ctx: Ctx):
+    """Draft search settings from the resume (one Claude call) and merge them into the empty fields of
+    the saved preferences. Runs as a search-lane job; what the person already typed is never replaced."""
+    if not (ctx.profile_path() or ctx.resume_path()):
+        raise HTTPException(409, "Add your profile or resume first, then settings can be drafted from it.")
+    store = store_for(ctx)
+    s = ctx.settings()
+    ctx.paths.scratch_dir.mkdir(parents=True, exist_ok=True)
+    out = ctx.paths.scratch_dir / "job_search_draft.json"
+    args = [*ctx.paths.search_draft_command, "--prefs", str(store.prefs_path), *_input_args(ctx), "--out", str(out),
+            "--model", s.model, "--effort", s.effort]
+
+    def on_success(job: Job) -> None:
+        data = json.loads(out.read_text(encoding="utf-8"))
+        out.unlink(missing_ok=True)
+        prefs = store.get_prefs()
+        merged = prefs.model_dump()
+        for key in ("titles", "title_keywords", "skill_terms", "industries", "min_level"):
+            if not merged.get(key) and data.get(key):
+                merged[key] = data[key]
+        if not merged.get("home_location"):
+            try:
+                pp = ctx.profile_path()
+                merged["home_location"] = (parse_applicant_info(pp).get("location", "") or "") if pp else ""
+            except SystemExit:
+                pass
+        saved = store.save_prefs(Preferences(**merged))
+        job.result = {"titles": saved.titles, "min_level": saved.min_level}
+
+    return _submit_search_job(ctx, "job_search_draft", "Drafting your search settings", args, s.timeout_seconds + 120, on_success)
+
+
 # -- targets -----------------------------------------------------------------------------------
 
 @router.get("/targets")
@@ -240,8 +276,7 @@ def latest_suggestions(ctx: Ctx):
     data = store.latest_suggestions()
     if not data:
         return {"exists": False, "companies": []}
-    have = {t["id"] for t in store.targets()}
-    from resume_taylor.search.normalize import norm_company
+    have = {norm_company(t["name"]) for t in store.targets()}
     return {"exists": True, **data, "companies": [c for c in data.get("companies", []) if norm_company(c["name"]) not in have]}
 
 
@@ -249,8 +284,8 @@ def latest_suggestions(ctx: Ctx):
 def accept_suggestions(ctx: Ctx, body: AcceptSuggestionsBody):
     store = store_for(ctx)
     data = store.latest_suggestions() or {}
-    wanted = {n.lower() for n in body.names}
-    picked = [c for c in data.get("companies", []) if c["name"].lower() in wanted]
+    wanted = {norm_company(n) for n in body.names}
+    picked = [c for c in data.get("companies", []) if norm_company(c["name"]) in wanted]
     return store.add_targets(picked, added_by="suggested") if picked else {"added": [], "skipped": [], "over_limit": [], "total": len(store.targets())}
 
 
@@ -415,6 +450,9 @@ def tailor(ctx: Ctx, pid: str, body: TailorBody):
         cover_letter=s.cover_letter_default if body.cover_letter is None else body.cover_letter,
     )
     ctx.store.touch(meta.id, posting_id=pid)
+    hints = posting_insights_text(rec)
+    if hints:  # what the search already learned about this role goes along to the tailoring call
+        atomic_write_text(ctx.store.dir(meta.id) / "posting_insights.txt", hints)
     updates = {"project_id": meta.id}
     if rec.get("stage") == "prospect":
         updates["stage"] = "interested"

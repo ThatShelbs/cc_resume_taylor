@@ -99,6 +99,10 @@ class Paths:
     def search_suggest_command(self) -> list[str]:
         return ["-m", "resume_taylor.search.suggest"]
 
+    @property
+    def search_draft_command(self) -> list[str]:
+        return ["-m", "resume_taylor.search.draft_prefs"]
+
     def latest(self, prefix: str, exts: tuple = (".docx",)) -> Path | None:
         """Newest resume_input/<prefix>* by modification time, like find_latest()."""
         if not self.input_dir.exists():

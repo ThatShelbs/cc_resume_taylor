@@ -41,18 +41,25 @@ _TEAMTAILOR = re.compile(r"([A-Za-z0-9-]+\.teamtailor\.com)", re.I)
 _WORKDAY = re.compile(
     r"([A-Za-z0-9-]+)\.(wd\d+)\.myworkdayjobs\.com/(?:[a-z]{2}(?:-[A-Z]{2})?/)?([A-Za-z0-9_-]+)", re.I
 )
+_WORKDAY_SITE = re.compile(
+    r"(wd\d+)\.myworkdaysite\.com/(?:[a-z]{2}(?:-[A-Za-z]{2})?/)?recruiting/([A-Za-z0-9_-]+)/([A-Za-z0-9_-]+)", re.I
+)
 _EIGHTFOLD = re.compile(r"([A-Za-z0-9-]+\.eightfold\.ai)", re.I)
-_RESERVED = {"embed", "v1", "api", "jobs", "careers", "en", "wday", "www", "app", "help", "assets", "cdn", "static"}
+_RESERVED = {"embed", "v1", "api", "jobs", "careers", "en", "wday", "www", "app", "help", "assets", "cdn", "static",
+             "recruiting"}
 
 
 def fingerprint(text: str) -> dict | None:
     """A route from any URL or HTML that mentions a known ATS, else None."""
     if not text:
         return None
-    m = _WORKDAY.search(text)
-    if m and m.group(3).lower() not in _RESERVED:
+    for m in _WORKDAY.finditer(text):  # keep looking past a reserved first match
         tenant, wd, site = m.groups()
-        return {"ats": "workday", "host": f"{tenant}.{wd}.myworkdayjobs.com", "tenant": tenant, "site": site}
+        if site.lower() not in _RESERVED:
+            return {"ats": "workday", "host": f"{tenant}.{wd}.myworkdayjobs.com", "tenant": tenant, "site": site}
+    for m in _WORKDAY_SITE.finditer(text):
+        wd, tenant, site = m.groups()
+        return {"ats": "workday", "host": f"{wd}.myworkdaysite.com", "tenant": tenant, "site": site, "recruiting": True}
     for ats, pat in _PATTERNS:
         for m in pat.finditer(text):
             token = m.group(1)
@@ -88,28 +95,32 @@ def slug_variants(name: str) -> list[str]:
     return uniq
 
 
-def _name_matches(board_name: str, company: str) -> bool:
+def _name_matches(board_name: str, company: str, strict: bool = False) -> bool:
     a, b = norm_company(board_name), norm_company(company)
-    return bool(a and b and (a == b or a in b or b in a))
+    if not (a and b):
+        return False
+    return a == b or (not strict and min(len(a), len(b)) >= 5 and (a in b or b in a))
 
 
 def probe(client, company: str) -> tuple[dict, int] | None:
     """Try the public board APIs under slug variants. Returns (route, job_count) or None."""
     from .connectors import ashby, lever
 
+    words = re.findall(r"[a-z0-9]+", _SUFFIX.sub(" ", company.lower()))
     for slug in slug_variants(company)[:3]:
-        exact = slug in ("".join(re.findall(r"[a-z0-9]+", _SUFFIX.sub(" ", company.lower()))),)
+        exact = slug in ("".join(words), "-".join(words))
+        strict = not exact  # the first word alone ("johnson") must be the whole name of the board
         info = client.get_json(f"https://boards-api.greenhouse.io/v1/boards/{slug}")
-        if info and _name_matches(info.get("name", ""), company):
+        if info and _name_matches(info.get("name", ""), company, strict):
             return {"ats": "greenhouse", "token": slug}, -1
         info = client.get_json(f"https://apply.workable.com/api/v1/widget/accounts/{slug}")
-        if info and _name_matches(info.get("name", ""), company):
+        if info and _name_matches(info.get("name", ""), company, strict):
             return {"ats": "workable", "token": slug}, -1
         sr = client.get_json(f"https://api.smartrecruiters.com/v1/companies/{slug}/postings", params={"limit": 1})
-        if sr and sr.get("content") and _name_matches((sr["content"][0].get("company") or {}).get("name", ""), company):
+        if sr and sr.get("content") and _name_matches((sr["content"][0].get("company") or {}).get("name", ""), company, strict):
             return {"ats": "smartrecruiters", "token": slug}, -1
         rc = client.get_json(f"https://{slug}.recruitee.com/api/offers/")
-        if rc and rc.get("offers") and _name_matches(rc["offers"][0].get("company_name", ""), company):
+        if rc and rc.get("offers") and _name_matches(rc["offers"][0].get("company_name", ""), company, strict):
             return {"ats": "recruitee", "token": slug}, -1
         if exact:  # these two APIs do not name the company, so only trust the unambiguous slug
             for mod, ats in ((lever, "lever"), (ashby, "ashby")):
@@ -190,8 +201,12 @@ def discover_routes(client, book: RouteBook, companies: list[dict], *, force: bo
             results[c["name"]] = existing
             if not existing.get("careers_url") and not existing.get("careers_url_checked"):
                 backfill.append(c)
+        elif not force and not c.get("careers_url") and (failed := book.recent_failure(c["name"])):
+            results[c["name"]] = failed  # looked for recently and found nothing; retry in a few days
         else:
             todo.append(c)
+
+    empty_found: dict[str, dict] = {}  # name -> a working board that lists nothing right now
 
     def work(c):
         found = _resolve_deterministic(client, c["name"], c.get("careers_url", ""))
@@ -204,13 +219,17 @@ def discover_routes(client, book: RouteBook, companies: list[dict], *, force: bo
     pending = []
     with ThreadPoolExecutor(max_workers=6) as pool:
         for c, found in pool.map(work, todo):
-            if found and found[2] is not None:
+            if found and found[2]:
                 route, method, count = found
                 results[c["name"]] = book.set(c["name"], {**route, "careers_url": c.get("careers_url", "")}, method=method, job_count=count)
                 progress(f"{c['name']}: {route['ats']}, {count} postings")
                 if not c.get("careers_url"):
                     backfill.append(c)
             else:
+                # A board that exists but lists nothing is not an answer: look for the company's own
+                # site next, and only fall back to "no openings" when everything is empty.
+                if found and found[2] == 0:
+                    empty_found[c["name"]] = {**found[0], "careers_url": c.get("careers_url", "")}
                 pending.append(c)
 
     # Claude, with web tools, for what the deterministic steps could not place, plus the careers
@@ -246,11 +265,13 @@ def discover_routes(client, book: RouteBook, companies: list[dict], *, force: bo
                 method = "claude"
                 if route:
                     count = validate(client, route, c["name"])
-                    if count is not None:
+                    if count:
                         extra = {"careers_url": url, **({"search_url": search} if search else {})}
                         results[c["name"]] = book.set(c["name"], {**route, **extra}, method=method, job_count=count)
                         progress(f"{c['name']}: {route['ats']}, {count} postings")
                         continue
+                    if count == 0:
+                        empty_found.setdefault(c["name"], {**route, "careers_url": url})
                 if url:
                     route = {"ats": "careers_page", "careers_url": url, **({"search_url": search} if search else {})}
                     count = validate(client, route, c["name"])
@@ -259,6 +280,13 @@ def discover_routes(client, book: RouteBook, companies: list[dict], *, force: bo
                                                       note="Read from the page itself; fewer fields than an ATS feed.")
                         progress(f"{c['name']}: careers page, {count} postings")
                         continue
+                if c["name"] in empty_found:
+                    keep = {**empty_found[c["name"]], "careers_url": url or empty_found[c["name"]].get("careers_url", ""),
+                            "careers_url_checked": True, **({"search_url": search} if search else {})}
+                    results[c["name"]] = book.set(c["name"], keep, method="claude", job_count=0, status="empty",
+                                                  note="Career site found, but it lists no openings right now.")
+                    progress(f"{c['name']}: {keep['ats']}, no openings right now")
+                    continue
                 results[c["name"]] = book.set(c["name"], {"ats": "", "careers_url": url}, method="none", job_count=None,
                                               status="failed", note=hit.get("notes") or "No careers page found.")
                 warn(f"No postings route found for {c['name']}.")

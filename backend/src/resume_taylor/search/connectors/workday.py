@@ -21,6 +21,8 @@ def _base(route: dict) -> str:
 
 
 def _public_url(route: dict, path: str) -> str:
+    if route.get("recruiting"):  # myworkdaysite.com hosts put the tenant in the path
+        return f"https://{route['host']}/recruiting/{route['tenant']}/{route['site']}{path}"
     return f"https://{route['host']}/{route['site']}{path}"
 
 
