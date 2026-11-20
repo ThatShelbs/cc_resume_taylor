@@ -67,7 +67,8 @@ export default function PreferencesPage() {
   const [form, setForm] = useState<Preferences | null>(null);
 
   useEffect(() => {
-    if (saved && !form) setForm(saved);
+    // an older server may not send newer fields; fill them so the form never reads undefined
+    if (saved && !form) setForm({ ...saved, title_keywords: saved.title_keywords ?? [], min_level: saved.min_level ?? "" });
   }, [saved, form]);
 
   const dirty = !!form && !!saved && JSON.stringify(form) !== JSON.stringify(saved);
@@ -77,7 +78,7 @@ export default function PreferencesPage() {
     mutationFn: () => api.put<Preferences>("/api/job-search/preferences", form),
     onSuccess: (p) => {
       qc.setQueryData(jsKeys.prefs, p);
-      setForm(p);
+      setForm({ ...p, title_keywords: p.title_keywords ?? [] });
       qc.invalidateQueries({ queryKey: jsKeys.readiness });
       toast.success("Preferences saved");
     },
